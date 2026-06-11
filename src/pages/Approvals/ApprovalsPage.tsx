@@ -31,7 +31,7 @@ export function ApprovalsPage() {
   const filtered = pending.filter(a => typeFilter === 'All' || a.type === typeFilter);
 
   return (
-    <div className="p-6">
+    <div className="p-6 min-h-full">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Approval Queue</h1>

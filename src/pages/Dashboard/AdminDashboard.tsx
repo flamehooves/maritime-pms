@@ -59,7 +59,7 @@ const getComplianceColor = (v: number) => v >= 90 ? '#10B981' : v >= 80 ? '#F59E
 
 export function AdminDashboard() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 min-h-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

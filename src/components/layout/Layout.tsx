@@ -10,7 +10,9 @@ export function Layout() {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto">
-          <Outlet />
+          <div className="min-h-full">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
