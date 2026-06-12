@@ -94,10 +94,10 @@ function FleetMap() {
   const mapVessels = vessels.filter(v => v.mapPosition);
 
   return (
-    <div className="relative w-full" style={{ minHeight: '320px', background: '#EEF6FC', position: 'relative', overflow: 'hidden', borderRadius: 12 }}>
+    <div className="relative w-full" style={{ height: '320px', background: '#EEF6FC', position: 'relative', overflow: 'hidden', borderRadius: 12 }}>
       {/* Blue continent silhouette on white — matches the shared blue map */}
       <img
-        src="/maritime-pms-v2/world-map.png"
+        src="/maritime-pms/world-map.png"
         alt=""
         aria-hidden="true"
         style={{
@@ -105,7 +105,7 @@ function FleetMap() {
           filter: 'brightness(0) saturate(100%) invert(55%) sepia(60%) saturate(400%) hue-rotate(165deg) brightness(0.95)',
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
+          objectFit: 'fill',
           position: 'absolute',
           inset: 0,
           opacity: 0.85,

@@ -3,17 +3,16 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Ship, Cog, ClipboardList, Wrench, Package,
   AlertTriangle, CheckSquare, BarChart3, Settings, ChevronLeft,
-  ChevronRight, Anchor, LayoutGrid, ChevronDown
+  ChevronRight, Anchor, ChevronDown
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { vessels } from '../../data/vessels';
-import type { Role } from '../../types';
+import type { Role, Vessel } from '../../types';
 
 const allNavItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
-  { path: '/vessels', label: 'Vessel Register', icon: Ship, roles: ['admin', 'chief_engineer'] as Role[] },
-  { path: '/equipment', label: 'Equipment', icon: Cog, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
-  { path: '/equipment/overview', label: 'Equip. Overview', icon: LayoutGrid, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
+  { path: '/vessels', label: 'Vessels', icon: Ship, roles: ['admin', 'chief_engineer'] as Role[] },
+  { path: '/equipment', label: 'Equipments', icon: Cog, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
   { path: '/job-plans', label: 'Job Plans', icon: ClipboardList, roles: ['admin', 'chief_engineer'] as Role[] },
   { path: '/job-orders', label: 'Job Orders', icon: Wrench, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
   { path: '/spares', label: 'Spares', icon: Package, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
@@ -22,6 +21,13 @@ const allNavItems = [
   { path: '/reports', label: 'Reports', icon: BarChart3, roles: ['admin', 'chief_engineer'] as Role[] },
   { path: '/settings', label: 'Settings', icon: Settings, roles: ['admin'] as Role[] },
 ];
+
+// Pages where the vessel selector should appear
+const VESSEL_SELECTOR_PATHS = ['/equipment', '/job-plans', '/job-orders', '/spares', '/defects', '/reports'];
+
+// Sentinel value representing "all vessels"
+const ALL_VESSELS_SENTINEL = '__all__';
+const ALL_VESSEL: Vessel = { id: ALL_VESSELS_SENTINEL, name: 'All Vessels' } as unknown as Vessel;
 
 const roleLabels: Record<Role, { label: string; color: string }> = {
   admin: { label: 'Fleet Administrator', color: 'bg-blue-500' },
@@ -58,6 +64,10 @@ export function Sidebar() {
   const roleInfo = roleLabels[currentRole];
   const [vesselDropdownOpen, setVesselDropdownOpen] = useState(false);
 
+  const showVesselSelector = !sidebarCollapsed &&
+    VESSEL_SELECTOR_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
+  const isAllVessels = currentVessel.id === ALL_VESSELS_SENTINEL;
+
   return (
     <div
       className="flex flex-col h-full transition-all duration-200"
@@ -83,8 +93,8 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Vessel selector */}
-      {!sidebarCollapsed && (
+      {/* Vessel selector — shown only on vessel-relevant pages */}
+      {showVesselSelector && (
         <div className="px-3 mt-3 relative">
           <button
             onClick={() => setVesselDropdownOpen(o => !o)}
@@ -96,7 +106,7 @@ export function Sidebar() {
               <div className="flex items-center gap-1.5">
                 <div
                   className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ background: getVesselStatusColor(currentVessel.vesselStatus) }}
+                  style={{ background: isAllVessels ? '#6B7280' : getVesselStatusColor(currentVessel.vesselStatus) }}
                 ></div>
                 <span className="text-sm font-semibold text-white truncate" style={{ maxWidth: 120 }}>{currentVessel.name}</span>
               </div>
@@ -120,21 +130,32 @@ export function Sidebar() {
                 background: '#1f2937',
                 border: '1px solid rgba(255,255,255,0.10)',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-                maxHeight: 220,
+                maxHeight: 240,
                 overflowY: 'auto',
               }}
             >
+              {/* All Vessels option */}
+              <button
+                key="__all__"
+                onClick={() => { setCurrentVessel(ALL_VESSEL); setVesselDropdownOpen(false); }}
+                className="w-full px-3 py-2 text-left flex items-center gap-2 transition-colors"
+                style={{ background: isAllVessels ? 'rgba(59,130,246,0.2)' : 'transparent' }}
+                onMouseEnter={e => { if (!isAllVessels) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; }}
+                onMouseLeave={e => { if (!isAllVessels) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+              >
+                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#6B7280' }}></div>
+                <div>
+                  <div className="text-xs font-semibold text-white leading-tight">All Vessels</div>
+                  <div className="text-xs" style={{ color: '#6B7280' }}>Fleet-wide view</div>
+                </div>
+              </button>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '2px 8px' }} />
               {vessels.map(v => (
                 <button
                   key={v.id}
-                  onClick={() => {
-                    setCurrentVessel(v);
-                    setVesselDropdownOpen(false);
-                  }}
+                  onClick={() => { setCurrentVessel(v); setVesselDropdownOpen(false); }}
                   className="w-full px-3 py-2 text-left flex items-center gap-2 transition-colors"
-                  style={{
-                    background: currentVessel.id === v.id ? 'rgba(59,130,246,0.2)' : 'transparent',
-                  }}
+                  style={{ background: currentVessel.id === v.id ? 'rgba(59,130,246,0.2)' : 'transparent' }}
                   onMouseEnter={e => { if (currentVessel.id !== v.id) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; }}
                   onMouseLeave={e => { if (currentVessel.id !== v.id) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                 >
