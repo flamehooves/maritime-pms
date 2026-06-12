@@ -22,7 +22,7 @@ const allNavItems = [
 ];
 
 const roleLabels: Record<Role, { label: string; color: string }> = {
-  admin: { label: 'Fleet Administrator', color: 'bg-sky-500' },
+  admin: { label: 'Fleet Administrator', color: 'bg-blue-500' },
   chief_engineer: { label: 'Chief Engineer', color: 'bg-emerald-500' },
   technician: { label: 'Technician', color: 'bg-amber-500' },
 };
@@ -50,21 +50,21 @@ export function Sidebar() {
       className="flex flex-col h-full transition-all duration-200"
       style={{
         width: sidebarCollapsed ? '56px' : '224px',
-        background: '#0F1923',
-        borderRight: '1px solid #1E2D3D',
+        background: '#111827',
+        borderRight: '1px solid rgba(255,255,255,0.06)',
         flexShrink: 0,
       }}
     >
       {/* Logo */}
-      <div className="flex items-center px-3 h-14 border-b" style={{ borderColor: '#1E2D3D' }}>
+      <div className="flex items-center px-3 h-14 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#0EA5E9' }}>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#5B8DEF' }}>
             <Anchor size={16} color="white" />
           </div>
           {!sidebarCollapsed && (
             <div>
               <span className="text-white font-semibold text-sm tracking-tight">MarineOps</span>
-              <div className="text-xs" style={{ color: '#4A6FA5' }}>PMS Platform</div>
+              <div className="text-xs" style={{ color: '#6B7280' }}>PMS Platform</div>
             </div>
           )}
         </div>
@@ -72,8 +72,8 @@ export function Sidebar() {
 
       {/* Vessel indicator */}
       {!sidebarCollapsed && (
-        <div className="px-3 py-2.5 border-b mx-3 mt-3 rounded-md" style={{ borderColor: '#1E2D3D', background: '#162537' }}>
-          <div className="text-xs font-medium" style={{ color: '#4A6FA5' }}>Current Vessel</div>
+        <div className="px-3 py-2.5 mx-3 mt-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div className="text-xs font-medium" style={{ color: '#6B7280' }}>Current Vessel</div>
           <div className="text-sm font-semibold text-white mt-0.5 flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></div>
             {currentVessel.name}
@@ -94,15 +94,15 @@ export function Sidebar() {
                 to={item.path}
                 title={sidebarCollapsed ? item.label : undefined}
                 className={() =>
-                  `flex items-center gap-3 px-2.5 py-2 rounded-md text-sm font-medium transition-all duration-150 ${
+                  `flex items-center gap-3 px-2.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 ${
                     isActive
-                      ? 'text-white border-l-2 border-sky-500'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'text-white'
+                      : 'text-gray-400 hover:text-gray-200'
                   }`
                 }
                 style={({ isActive: active }) => active
-                  ? { background: '#1B3A5C', borderLeftColor: '#0EA5E9' }
-                  : { borderLeft: '2px solid transparent' }
+                  ? { background: 'rgba(255,255,255,0.10)', backdropFilter: 'blur(8px)' }
+                  : {}
                 }
               >
                 <item.icon size={16} className="flex-shrink-0" />
@@ -116,9 +116,9 @@ export function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        className="mx-2 mb-2 p-2 rounded-md transition-colors flex items-center justify-center"
-        style={{ color: '#4A6FA5' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#162537')}
+        className="mx-2 mb-2 p-2 rounded-xl transition-colors flex items-center justify-center"
+        style={{ color: '#6B7280' }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
@@ -126,7 +126,7 @@ export function Sidebar() {
       </button>
 
       {/* User section */}
-      <div className="border-t px-3 py-3" style={{ borderColor: '#1E2D3D' }}>
+      <div className="border-t px-3 py-3" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-2.5">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${roleInfo.color}`}>
             {roleAvatars[currentRole]}
@@ -134,7 +134,7 @@ export function Sidebar() {
           {!sidebarCollapsed && (
             <div className="min-w-0">
               <div className="text-white text-xs font-medium truncate">{roleNames[currentRole]}</div>
-              <div className="text-xs truncate" style={{ color: '#4A6FA5' }}>{roleInfo.label}</div>
+              <div className="text-xs truncate" style={{ color: '#6B7280' }}>{roleInfo.label}</div>
             </div>
           )}
         </div>

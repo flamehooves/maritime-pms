@@ -131,7 +131,7 @@ export function EquipmentTree() {
   return (
     <div
       className="flex flex-col bg-white border-r border-slate-200 h-full"
-      style={{ width: '300px', minWidth: '300px' }}
+      style={{ flex: '1', minWidth: 0 }}
     >
       {/* Header */}
       <div className="px-3 py-3 border-b border-slate-200">

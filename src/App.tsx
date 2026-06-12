@@ -4,6 +4,7 @@ import { AppProvider } from './context/AppContext';
 import { Layout } from './components/layout/Layout';
 import { DashboardPage } from './pages/Dashboard/index';
 import { VesselsPage } from './pages/Vessels/VesselsPage';
+import { VesselDetailPage } from './pages/Vessels/VesselDetailPage';
 import { EquipmentPage } from './pages/Equipment/EquipmentPage';
 import { JobPlansPage } from './pages/JobPlans/JobPlansPage';
 import { JobOrdersPage } from './pages/JobOrders/JobOrdersPage';
@@ -21,6 +22,7 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<DashboardPage />} />
             <Route path="vessels" element={<VesselsPage />} />
+            <Route path="vessels/:id" element={<VesselDetailPage />} />
             <Route path="equipment" element={<EquipmentPage />} />
             <Route path="job-plans" element={<JobPlansPage />} />
             <Route path="job-orders" element={<JobOrdersPage />} />

@@ -22,6 +22,8 @@ export interface Vessel {
   grt: number;
   callSign: string;
   port: string;
+  mapPosition?: { x: number; y: number };
+  vesselStatus?: 'at_sea' | 'in_port' | 'in_maintenance' | 'drydock';
 }
 
 export interface Equipment {
