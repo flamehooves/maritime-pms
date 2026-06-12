@@ -11,16 +11,16 @@ const P = 'https://images.pexels.com/photos';
 const Q = '?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop';
 const vesselImages: Record<string, string> = {
   'Cruise Ship':     `${P}/33270055/pexels-photo-33270055.jpeg${Q}`,
-  'Bulk Carrier':    `${P}/12204300/pexels-photo-12204300.jpeg${Q}`,
-  'Container Vessel':`${P}/20821680/pexels-photo-20821680.jpeg${Q}`,
-  'General Cargo':   `${P}/30463262/pexels-photo-30463262.jpeg${Q}`,
-  'Chemical Tanker': `${P}/27275198/pexels-photo-27275198.jpeg${Q}`,
-  'Tanker':          `${P}/27275198/pexels-photo-27275198.jpeg${Q}`,
-  'Product Tanker':  `${P}/27275198/pexels-photo-27275198.jpeg${Q}`,
+  'Bulk Carrier':    `${P}/11940863/pexels-photo-11940863.jpeg${Q}`,
+  'Container Vessel':`${P}/9806482/pexels-photo-9806482.jpeg${Q}`,
+  'General Cargo':   `${P}/36638041/pexels-photo-36638041.jpeg${Q}`,
+  'Chemical Tanker': `${P}/36563588/pexels-photo-36563588.jpeg${Q}`,
+  'Tanker':          `${P}/36563588/pexels-photo-36563588.jpeg${Q}`,
+  'Product Tanker':  `${P}/10832142/pexels-photo-10832142.jpeg${Q}`,
   'LPG Carrier':     `${P}/1036866/pexels-photo-1036866.jpeg${Q}`,
-  'OBO Carrier':     `${P}/7572149/pexels-photo-7572149.jpeg${Q}`,
-  'Ro-Ro Vessel':    `${P}/262353/pexels-photo-262353.jpeg${Q}`,
-  'default':         `${P}/12204300/pexels-photo-12204300.jpeg${Q}`,
+  'OBO Carrier':     `${P}/19500302/pexels-photo-19500302.jpeg${Q}`,
+  'Ro-Ro Vessel':    `${P}/37828492/pexels-photo-37828492.jpeg${Q}`,
+  'default':         `${P}/11940863/pexels-photo-11940863.jpeg${Q}`,
 };
 
 const statusColors: Record<string, { bg: string; border: string; text: string }> = {
