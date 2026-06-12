@@ -42,7 +42,7 @@ export function SparesPage() {
           <div className="flex items-center gap-2"><AlertTriangle size={14} className="text-red-500" /><span className="text-xs text-red-600">Critical Spares</span></div>
           <div className="text-xl font-bold text-red-700 mt-1">{spareParts.filter(s => s.isCritical).length}</div>
         </div>
-        <div className="bg-white rounded-lg border border-amber-100 p-3" style={{ background: '#FFFBEB', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div className="bg-white rounded-lg border border-amber-100 p-3" style={{ background: '#eef2ff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div className="flex items-center gap-2"><AlertTriangle size={14} className="text-amber-500" /><span className="text-xs text-amber-600">Low Stock</span></div>
           <div className="text-xl font-bold text-amber-700 mt-1">{lowStock.length}</div>
         </div>

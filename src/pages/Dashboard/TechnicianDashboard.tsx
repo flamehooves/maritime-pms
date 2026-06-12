@@ -32,7 +32,7 @@ const allMyJobs = [
 
 const statusConfig = {
   operational: { bg: '#DCFCE7', color: '#34C759' },
-  under_maintenance: { bg: '#FFF3DC', color: '#FF9F0A' },
+  under_maintenance: { bg: '#eef2ff', color: '#FF9F0A' },
   defect: { bg: '#FFE5E4', color: '#FF453A' },
   inactive: { bg: '#F3F4F6', color: '#9CA3AF' },
 };
@@ -84,7 +84,7 @@ function EquipmentHeatmap() {
       <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100">
         {[
           { label: 'Operational', color: '#34C759', bg: '#DCFCE7' },
-          { label: 'Maintenance', color: '#FF9F0A', bg: '#FFF3DC' },
+          { label: 'Maintenance', color: '#FF9F0A', bg: '#eef2ff' },
           { label: 'Defect', color: '#FF453A', bg: '#FFE5E4' },
         ].map(item => (
           <div key={item.label} className="flex items-center gap-1.5">
@@ -251,7 +251,7 @@ export function TechnicianDashboard() {
                 </div>
               </div>
               <div className="px-4 py-3 flex items-start gap-3">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#FFF3DC', color: '#FF9F0A' }}>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#eef2ff', color: '#FF9F0A' }}>
                   <AlertTriangle size={14} />
                 </div>
                 <div>

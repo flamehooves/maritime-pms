@@ -25,7 +25,7 @@ const vesselImages: Record<string, string> = {
 
 const statusColors: Record<string, { bg: string; border: string; text: string }> = {
   operational: { bg: '#DCFCE7', border: '#34C759', text: '#15803D' },
-  under_maintenance: { bg: '#FFF3DC', border: '#FF9F0A', text: '#CC7A00' },
+  under_maintenance: { bg: '#eef2ff', border: '#FF9F0A', text: '#3730a3' },
   defect: { bg: '#FFE5E4', border: '#FF453A', text: '#CC1100' },
   inactive: { bg: '#F3F4F6', border: '#9CA3AF', text: '#6B7280' },
 };
@@ -131,12 +131,12 @@ export function VesselDetailPage() {
               <div className="text-xs font-medium" style={{ color: '#FF453A' }}>Overdue Jobs</div>
             </div>
           </div>
-          <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: '#FFF3DC', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: '#eef2ff', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#FFE4B0', color: '#FF9F0A' }}>
               <AlertTriangle size={18} />
             </div>
             <div>
-              <div className="text-2xl font-bold" style={{ color: '#CC7A00' }}>{vesselDefects.filter(d => d.status !== 'Resolved' && d.status !== 'Closed').length}</div>
+              <div className="text-2xl font-bold" style={{ color: '#3730a3' }}>{vesselDefects.filter(d => d.status !== 'Resolved' && d.status !== 'Closed').length}</div>
               <div className="text-xs font-medium" style={{ color: '#FF9F0A' }}>Active Defects</div>
             </div>
           </div>

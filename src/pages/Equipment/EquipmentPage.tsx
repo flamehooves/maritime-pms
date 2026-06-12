@@ -1,112 +1,120 @@
 import React, { useState } from 'react';
-import { LayoutGrid, List, Activity } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { EquipmentTree } from './EquipmentTree';
 import { EquipmentDetail } from './EquipmentDetail';
+import { EquipmentOverviewPage } from './EquipmentOverviewPage';
 import { useApp } from '../../context/AppContext';
 import { flattenEquipment, equipmentTree } from '../../data/equipment';
 import type { Equipment } from '../../types';
 
-const statusColors: Record<string, { bg: string; border: string; text: string }> = {
-  operational: { bg: '#DCFCE7', border: '#34C759', text: '#15803D' },
-  under_maintenance: { bg: '#FFF3DC', border: '#FF9F0A', text: '#CC7A00' },
-  defect: { bg: '#FFE5E4', border: '#FF453A', text: '#CC1100' },
-  inactive: { bg: '#F3F4F6', border: '#9CA3AF', text: '#6B7280' },
-};
-
-// ── Equipment Heatmap (right-panel default when nothing selected) ──────────
+// ── Status config ─────────────────────────────────────────────────────────
 const STATUS_CFG = {
-  operational:      { bg: '#D1FAE5', border: '#22C55E', dot: '#16A34A', label: 'Operational' },
-  under_maintenance:{ bg: '#FEF3C7', border: '#F59E0B', dot: '#D97706', label: 'Maintenance' },
-  defect:           { bg: '#FEE2E2', border: '#EF4444', dot: '#DC2626', label: 'Defect' },
-  inactive:         { bg: '#F1F5F9', border: '#94A3B8', dot: '#64748B', label: 'Inactive' },
+  operational:       { bg: '#D1FAE5', border: '#22C55E', dot: '#16A34A', glow: 'rgba(34,197,94,0.3)',  label: 'Operational' },
+  under_maintenance: { bg: "#FEF3C7", border: "#F59E0B", dot: '#D97706', glow: 'rgba(79,70,230,0.3)', label: 'Maintenance' },
+  defect:            { bg: '#FEE2E2', border: '#EF4444', dot: '#DC2626', glow: 'rgba(239,68,68,0.3)',   label: 'Defect' },
+  inactive:          { bg: '#F1F5F9', border: '#94A3B8', dot: '#64748B', glow: 'rgba(148,163,184,0.3)', label: 'Inactive' },
 };
 
+// ── Liquid glass style helper ─────────────────────────────────────────────
+const glassPanel: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.6)',
+  backdropFilter: 'blur(20px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+  border: '1px solid rgba(255,255,255,0.8)',
+  boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+};
+
+// ── Heatmap: small colored blocks, tooltip on hover ───────────────────────
 function EquipmentHeatmap({ onSelect }: { onSelect: (eq: Equipment) => void }) {
-  // Build system groups from the tree (top-level children of root)
   const root = equipmentTree[0];
   const systems = root?.children ?? [];
-
-  // Count stats
   const all = flattenEquipment(equipmentTree).filter(e => !e.isGroup);
-  const total = all.length;
   const byStatus = {
-    operational: all.filter(e => (e.status ?? 'operational') === 'operational').length,
+    operational:       all.filter(e => (e.status ?? 'operational') === 'operational').length,
     under_maintenance: all.filter(e => e.status === 'under_maintenance').length,
-    defect: all.filter(e => e.status === 'defect').length,
-    inactive: all.filter(e => e.status === 'inactive').length,
+    defect:            all.filter(e => e.status === 'defect').length,
+    inactive:          all.filter(e => e.status === 'inactive').length,
   };
 
   return (
-    <div className="overflow-y-auto h-full" style={{ background: '#F8FAFC' }}>
+    <div className="overflow-y-auto h-full" style={{ padding: '20px 20px 32px' }}>
       {/* Header */}
-      <div className="px-6 pt-5 pb-3">
-        <div className="flex items-center gap-2 mb-1">
-          <Activity size={16} className="text-slate-400" />
-          <h2 className="text-base font-bold text-slate-900">Equipment Health Heatmap</h2>
-        </div>
-        <p className="text-xs text-slate-500">Click any equipment tile to view details and drill down</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <Activity size={15} color="#94A3B8" />
+        <span style={{ fontWeight: 700, fontSize: 14, color: '#1C1C1E' }}>Equipment Health Heatmap</span>
+      </div>
+      <p style={{ fontSize: 11, color: '#94A3B8', marginBottom: 14 }}>Hover a block to identify · click to drill down</p>
 
-        {/* Summary row */}
-        <div className="flex gap-3 mt-3">
-          {Object.entries(STATUS_CFG).map(([key, cfg]) => (
-            <div key={key} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: cfg.bg, border: `1px solid ${cfg.border}40` }}>
-              <div className="w-2 h-2 rounded-full" style={{ background: cfg.dot }}></div>
-              <span style={{ color: cfg.dot }}>{byStatus[key as keyof typeof byStatus]}</span>
-              <span className="text-slate-500">{cfg.label}</span>
-            </div>
-          ))}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 ml-auto">
-            {total} total equipment
+      {/* Legend row */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+        {Object.entries(STATUS_CFG).map(([key, cfg]) => (
+          <div key={key} style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '4px 10px', borderRadius: 20,
+            background: 'rgba(255,255,255,0.7)',
+            backdropFilter: 'blur(8px)',
+            border: `1px solid ${cfg.border}40`,
+            boxShadow: `0 1px 4px ${cfg.glow}`,
+            fontSize: 11, fontWeight: 500,
+          }}>
+            <div style={{ width: 10, height: 10, borderRadius: 3, background: cfg.dot, boxShadow: `0 0 4px ${cfg.glow}` }} />
+            <span style={{ color: cfg.dot }}>{byStatus[key as keyof typeof byStatus]}</span>
+            <span style={{ color: '#6B7280' }}>{cfg.label}</span>
           </div>
-        </div>
+        ))}
       </div>
 
       {/* System sections */}
-      <div className="px-6 pb-6 space-y-5">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {systems.map(system => {
           const sysItems = flattenEquipment([system]).filter(e => !e.isGroup);
           if (sysItems.length === 0) return null;
           const hasDefect = sysItems.some(e => e.status === 'defect');
           const hasMaint  = sysItems.some(e => e.status === 'under_maintenance');
-          const systemStatus = hasDefect ? 'defect' : hasMaint ? 'under_maintenance' : 'operational';
-          const cfg = STATUS_CFG[systemStatus];
+          const sysSt     = hasDefect ? 'defect' : hasMaint ? 'under_maintenance' : 'operational';
+          const sysCfg    = STATUS_CFG[sysSt];
 
           return (
             <div key={system.id}>
-              {/* System header */}
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cfg.dot }}></div>
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{system.name}</span>
-                <div className="flex-1 h-px" style={{ background: '#E2E8F0' }}></div>
-                <span className="text-xs text-slate-400">{sysItems.length} items</span>
+              {/* Section label */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: sysCfg.dot, boxShadow: `0 0 6px ${sysCfg.glow}` }} />
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{system.name}</span>
+                <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.07)' }} />
+                <span style={{ fontSize: 10, color: '#94A3B8' }}>{sysItems.length}</span>
               </div>
 
-              {/* Equipment tiles */}
-              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+              {/* Block grid — small colored squares only, tooltip shows name */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {sysItems.map(eq => {
-                  const st = eq.status ?? 'operational';
-                  const c = STATUS_CFG[st as keyof typeof STATUS_CFG] ?? STATUS_CFG.operational;
+                  const st  = eq.status ?? 'operational';
+                  const cfg = STATUS_CFG[st as keyof typeof STATUS_CFG] ?? STATUS_CFG.operational;
                   return (
                     <button
                       key={eq.id}
+                      title={`${eq.code} · ${eq.name}`}
                       onClick={() => onSelect(eq)}
-                      className="text-left rounded-xl p-2.5 transition-all hover:scale-[1.03] hover:shadow-md focus:outline-none"
                       style={{
-                        background: c.bg,
-                        border: `1.5px solid ${c.border}60`,
-                        boxShadow: `0 2px 0 0 ${c.border}30`,
+                        width: 32, height: 32,
+                        borderRadius: 7,
+                        border: `1.5px solid ${cfg.border}70`,
+                        background: `linear-gradient(145deg, ${cfg.bg}, ${cfg.border}20)`,
+                        boxShadow: `0 2px 6px ${cfg.glow}, inset 0 1px 0 rgba(255,255,255,0.6)`,
+                        cursor: 'pointer',
+                        transition: 'all 0.12s ease',
+                        flexShrink: 0,
                       }}
-                      title={eq.name}
-                    >
-                      <div className="text-xs font-mono mb-0.5 truncate" style={{ color: c.dot, opacity: 0.8 }}>{eq.code}</div>
-                      <div className="text-xs font-semibold text-slate-800 leading-tight truncate">{eq.name}</div>
-                      <div className="flex items-center gap-1 mt-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: c.dot }}></div>
-                        <span className="text-xs" style={{ color: c.dot }}>
-                          {st === 'under_maintenance' ? 'Maint.' : st.charAt(0).toUpperCase() + st.slice(1)}
-                        </span>
-                      </div>
-                    </button>
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.transform = 'scale(1.18)';
+                        (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 12px ${cfg.glow}, inset 0 1px 0 rgba(255,255,255,0.8)`;
+                        (e.currentTarget as HTMLElement).style.zIndex = '10';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                        (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 6px ${cfg.glow}, inset 0 1px 0 rgba(255,255,255,0.6)`;
+                        (e.currentTarget as HTMLElement).style.zIndex = '1';
+                      }}
+                    />
                   );
                 })}
               </div>
@@ -118,94 +126,85 @@ function EquipmentHeatmap({ onSelect }: { onSelect: (eq: Equipment) => void }) {
   );
 }
 
-function EquipmentGridView({ onSelect, selectedId }: { onSelect: (eq: Equipment) => void; selectedId: string | null }) {
-  const allEquipment = flattenEquipment(equipmentTree).filter(e => !e.isGroup);
-
-  return (
-    <div className="overflow-y-auto h-full p-3" style={{ background: '#F5F5F7' }}>
-      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
-        {allEquipment.map(eq => {
-          const status = eq.status ?? 'operational';
-          const colors = statusColors[status] ?? statusColors.operational;
-          const isSelected = selectedId === eq.id;
-
-          return (
-            <div
-              key={eq.id}
-              className="rounded-xl p-3 cursor-pointer transition-all"
-              style={{
-                background: isSelected ? colors.border : colors.bg,
-                borderLeft: `4px solid ${colors.border}`,
-                boxShadow: isSelected
-                  ? `0 4px 0 0 ${colors.border}66, 0 6px 16px rgba(0,0,0,0.14)`
-                  : `0 4px 0 0 ${colors.border}33, 0 6px 12px rgba(0,0,0,0.08)`,
-                transform: isSelected ? 'scale(1.02)' : undefined,
-              }}
-              onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'; }}
-              onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
-              onClick={() => onSelect(eq)}
-            >
-              <div className="text-xs font-mono mb-0.5 truncate" style={{ color: isSelected ? 'rgba(255,255,255,0.7)' : colors.border }}>{eq.code}</div>
-              <div className="text-xs font-semibold leading-tight truncate" style={{ color: isSelected ? '#fff' : '#1C1C1E' }} title={eq.name}>{eq.name}</div>
-              <div className="flex items-center gap-1 mt-1.5">
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: isSelected ? 'rgba(255,255,255,0.8)' : colors.border }}></div>
-                <span className="text-xs capitalize" style={{ color: isSelected ? 'rgba(255,255,255,0.8)' : colors.text }}>
-                  {status === 'under_maintenance' ? 'Maint.' : status.charAt(0).toUpperCase() + status.slice(1)}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// ── Main EquipmentPage ────────────────────────────────────────────────────
+type RightTab = 'heatmap' | 'overview';
 
 export function EquipmentPage() {
   const { selectedEquipment, setSelectedEquipment } = useApp();
-  const [viewMode, setViewMode] = useState<'tree' | 'grid'>('tree');
+  const [rightTab, setRightTab] = useState<RightTab>('heatmap');
+
+  // When an equipment item is clicked from the heatmap, show its detail
+  const handleSelect = (eq: Equipment) => {
+    setSelectedEquipment(eq);
+  };
+
+  const showDetail = !!(selectedEquipment && !selectedEquipment.isGroup);
 
   return (
-    <div className="flex h-full overflow-hidden" style={{ height: 'calc(100vh - 56px)' }}>
-      {/* Left panel */}
-      <div className="flex flex-col h-full" style={{ width: '300px', minWidth: '300px', flexShrink: 0 }}>
-        {/* View toggle */}
-        <div className="flex items-center gap-1 px-3 py-2 bg-white border-b border-slate-200" style={{ borderRight: '1px solid #E5E7EB' }}>
-          <button
-            onClick={() => setViewMode('tree')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              viewMode === 'tree' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
-            }`}
-          >
-            <List size={12} />
-            Tree View
-          </button>
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              viewMode === 'grid' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
-            }`}
-          >
-            <LayoutGrid size={12} />
-            Grid View
-          </button>
+    <div style={{ display: 'flex', height: 'calc(100vh - 76px)', overflow: 'hidden', padding: '0 12px 12px' }}>
+
+      {/* ── Left panel ── */}
+      <div style={{
+        ...glassPanel,
+        width: 280, minWidth: 280, flexShrink: 0,
+        borderRadius: 16,
+        marginRight: 10,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}>
+        {/* Tab bar inside left panel: Health Heatmap | Equipment Overview */}
+        <div style={{
+          display: 'flex', gap: 4,
+          padding: '8px 10px 6px',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          flexShrink: 0,
+        }}>
+          {([
+            { key: 'heatmap',  label: 'Health Heatmap' },
+            { key: 'overview', label: 'Eq. Overview' },
+          ] as { key: RightTab; label: string }[]).map(tab => {
+            const active = rightTab === tab.key && !showDetail;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => { setRightTab(tab.key); setSelectedEquipment(null as any); }}
+                style={{
+                  flex: 1, padding: '5px 6px', borderRadius: 10,
+                  fontSize: 11, fontWeight: active ? 600 : 500,
+                  border: 'none', cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  background: active ? 'rgba(79,70,230,0.2)' : 'transparent',
+                  color: active ? '#4338ca' : 'rgba(60,60,67,0.5)',
+                  boxShadow: active ? 'inset 0 0 0 1px rgba(79,70,230,0.4)' : 'none',
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
-        {viewMode === 'tree' ? (
+        {/* Tree view only */}
+        <div style={{ flex: 1, overflow: 'hidden' }}>
           <EquipmentTree />
-        ) : (
-          <EquipmentGridView
-            onSelect={setSelectedEquipment}
-            selectedId={selectedEquipment?.id ?? null}
-          />
-        )}
+        </div>
       </div>
 
-      {/* Right panel */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        {selectedEquipment && !selectedEquipment.isGroup
-          ? <EquipmentDetail equipment={selectedEquipment} />
-          : <EquipmentHeatmap onSelect={setSelectedEquipment} />
+      {/* ── Right panel ── */}
+      <div style={{
+        ...glassPanel,
+        flex: 1,
+        borderRadius: 16,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
+        {showDetail
+          ? <EquipmentDetail equipment={selectedEquipment!} />
+          : rightTab === 'overview'
+            ? <EquipmentOverviewPage />
+            : <EquipmentHeatmap onSelect={handleSelect} />
         }
       </div>
     </div>

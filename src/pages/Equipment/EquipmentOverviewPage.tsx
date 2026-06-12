@@ -6,7 +6,7 @@ import type { Equipment } from '../../types';
 
 const statusStyle: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
   operational: { bg: '#f0fdf4', border: '#16a34a', text: '#15803d', dot: '#16a34a', label: 'Operational' },
-  under_maintenance: { bg: '#fffbeb', border: '#d97706', text: '#b45309', dot: '#d97706', label: 'Maintenance' },
+  under_maintenance: { bg: '#eef2ff', border: '#d97706', text: '#b45309', dot: '#d97706', label: 'Maintenance' },
   defect: { bg: '#fef2f2', border: '#dc2626', text: '#b91c1c', dot: '#dc2626', label: 'Defect' },
   inactive: { bg: '#f9fafb', border: '#9ca3af', text: '#6b7280', dot: '#9ca3af', label: 'Inactive' },
 };

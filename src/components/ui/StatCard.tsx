@@ -34,10 +34,10 @@ const colorMap = {
     icon: 'text-orange-500 bg-orange-50',
     value: 'text-orange-600',
     bg: 'bg-white',
-    pastelBg: '#FFF3DC',
+    pastelBg: '#eef2ff',
     pastelIconBg: '#FFE4B0',
     pastelIconColor: '#FF9F0A',
-    pastelValue: '#CC7A00',
+    pastelValue: '#3730a3',
   },
   success: {
     icon: 'text-emerald-600 bg-emerald-50',

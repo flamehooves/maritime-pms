@@ -40,21 +40,21 @@ const statusMap: Record<string, { label: string; classes: string }> = {
 const priorityMap: Record<string, string> = {
   Critical: 'bg-red-50 text-red-800 border border-red-200',
   High: 'bg-orange-50 text-orange-800 border border-orange-200',
-  Medium: 'bg-yellow-50 text-yellow-800 border border-yellow-200',
+  Medium: 'bg-indigo-50 text-indigo-800 border border-indigo-200',
   Low: 'bg-slate-100 text-slate-700 border border-slate-200',
 };
 
 const severityMap: Record<string, string> = {
   Critical: 'bg-red-100 text-red-800 border border-red-300 font-semibold',
   High: 'bg-orange-50 text-orange-800 border border-orange-200',
-  Medium: 'bg-yellow-50 text-yellow-800 border border-yellow-200',
+  Medium: 'bg-indigo-50 text-indigo-800 border border-indigo-200',
   Low: 'bg-slate-100 text-slate-700 border border-slate-200',
 };
 
 const criticalityMap: Record<string, string> = {
   critical: 'bg-red-50 text-red-700 border border-red-200',
   high: 'bg-orange-50 text-orange-700 border border-orange-200',
-  medium: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
+  medium: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
   low: 'bg-slate-100 text-slate-600 border border-slate-200',
 };
 

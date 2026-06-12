@@ -7,23 +7,23 @@ import { Anchor, CheckCircle, AlertCircle, Loader } from 'lucide-react';
  * Zoho OAuth implicit flow redirect handler.
  *
  * Zoho returns the token in the URL fragment:
- *   http://localhost:5178/redirect#access_token=xxxxx&expires_in=3600&...
+ *   http://localhost:5178/redirect#access_token=xxxxx&expires_in=3600&api_domain=...
  *
- * We parse window.location.hash, extract access_token, save it, then
- * redirect to the app home.
+ * We parse window.location.hash, extract access_token, save it,
+ * fetch the current Zoho user, then redirect to the app home.
  */
 export function RedirectPage() {
-  const { saveToken } = useAuth();
+  const { saveToken, saveUser } = useAuth();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus]   = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    // Parse the URL hash fragment: #access_token=xxx&token_type=Zoho-oauthtoken&expires_in=3600
-    const hash = window.location.hash.substring(1); // strip leading '#'
+    const hash   = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
 
     const accessToken = params.get('access_token');
+    const apiDomain   = params.get('api_domain') ?? 'https://www.zohoapis.com';
     const error       = params.get('error');
     const errorDesc   = params.get('error_description');
 
@@ -33,25 +33,50 @@ export function RedirectPage() {
       return;
     }
 
-    if (!accessToken) {
-      // Also try query string (some Zoho configs)
-      const qp = new URLSearchParams(window.location.search);
-      const qToken = qp.get('access_token');
-      if (qToken) {
-        saveToken(qToken);
-        setStatus('success');
-        setTimeout(() => navigate('/', { replace: true }), 1200);
-        return;
-      }
+    // Also try query string (some Zoho configs)
+    const resolvedToken = accessToken ?? new URLSearchParams(window.location.search).get('access_token');
+
+    if (!resolvedToken) {
       setErrorMsg('No access token received from Zoho. Please try again.');
       setStatus('error');
       return;
     }
 
-    saveToken(accessToken);
-    setStatus('success');
-    // Brief success flash, then redirect to app
-    setTimeout(() => navigate('/', { replace: true }), 1200);
+    // 1. Persist token
+    saveToken(resolvedToken);
+
+    // 2. Fetch current user from Zoho CRM
+    fetch(`${apiDomain}/crm/v3/users?type=CurrentUser`, {
+      headers: {
+        Authorization: `Zoho-oauthtoken ${resolvedToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`User API responded with ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        // Zoho returns { users: [ { id, full_name, email, role: { name }, profile: { name }, ... } ] }
+        const raw  = data?.users?.[0] ?? {};
+        saveUser({
+          id:       String(raw.id ?? ''),
+          full_name: raw.full_name ?? raw.name ?? 'Unknown',
+          email:    raw.email ?? '',
+          role:     raw.role?.name ?? raw.role ?? '',
+          profile:  raw.profile?.name ?? raw.profile ?? '',
+          ...raw,
+        });
+        setStatus('success');
+        setTimeout(() => navigate('/', { replace: true }), 1200);
+      })
+      .catch(err => {
+        // Non-fatal: token is saved, user info just won't be available
+        console.warn('Failed to fetch current user:', err);
+        setStatus('success');
+        setTimeout(() => navigate('/', { replace: true }), 1200);
+      });
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

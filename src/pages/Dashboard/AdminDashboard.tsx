@@ -94,33 +94,21 @@ function FleetMap() {
   const mapVessels = vessels.filter(v => v.mapPosition);
 
   return (
-    <div className="relative w-full" style={{ minHeight: '320px', background: '#0a1628', position: 'relative', overflow: 'hidden' }}>
-      {/* Base map: faint white silhouette */}
+    <div className="relative w-full" style={{ minHeight: '320px', background: '#EEF6FC', position: 'relative', overflow: 'hidden', borderRadius: 12 }}>
+      {/* Blue continent silhouette on white — matches the shared blue map */}
       <img
-        src="/maritime-pms/world-map.png"
+        src="/maritime-pms-v2/world-map.png"
         alt=""
         aria-hidden="true"
         style={{
-          filter: 'brightness(0) invert(1) opacity(0.15)',
+          /* Turns any map into clean blue (#29ABE2-like) continents on white */
+          filter: 'brightness(0) saturate(100%) invert(55%) sepia(60%) saturate(400%) hue-rotate(165deg) brightness(0.95)',
           width: '100%',
           height: '100%',
           objectFit: 'cover',
           position: 'absolute',
           inset: 0,
-        }}
-      />
-      {/* Blue tinted overlay */}
-      <img
-        src="/maritime-pms/world-map.png"
-        alt=""
-        aria-hidden="true"
-        style={{
-          filter: 'invert(1) sepia(1) saturate(2) hue-rotate(180deg) opacity(0.4)',
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          position: 'absolute',
-          inset: 0,
+          opacity: 0.85,
         }}
       />
       {/* Vessel dots — CSS-positioned divs for perfect circles */}
@@ -162,39 +150,41 @@ function FleetMap() {
             {/* Dot */}
             <div style={{
               position: 'absolute',
-              width: 10, height: 10,
+              width: 11, height: 11,
               borderRadius: '50%',
               background: color,
-              border: '2px solid rgba(255,255,255,0.8)',
+              border: '2px solid rgba(255,255,255,0.95)',
               transform: 'translate(-50%, -50%)',
-              boxShadow: `0 0 6px ${color}99`,
+              boxShadow: `0 0 8px ${color}cc, 0 1px 3px rgba(0,0,0,0.2)`,
             }} />
-            {/* Tooltip */}
+            {/* Tooltip — glass style for light bg */}
             <div className="vessel-tooltip" style={{
               position: 'absolute',
-              bottom: 14,
+              bottom: 16,
               left: '50%',
               transform: 'translateX(-50%)',
-              background: 'rgba(10,22,40,0.95)',
-              color: '#fff',
+              background: 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(12px)',
+              color: '#1C1C1E',
               fontSize: 11,
               fontWeight: 600,
-              padding: '4px 8px',
-              borderRadius: 6,
+              padding: '5px 10px',
+              borderRadius: 8,
               whiteSpace: 'nowrap',
-              border: `1px solid ${color}66`,
+              border: `1px solid rgba(255,255,255,0.8)`,
+              boxShadow: `0 4px 12px rgba(0,0,0,0.12), 0 0 0 1px ${color}40`,
               pointerEvents: 'none',
             }}>
               {v.name}
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 400, fontSize: 10 }}>
+              <div style={{ color: '#6B7280', fontWeight: 400, fontSize: 10 }}>
                 {v.vesselStatus === 'at_sea' ? '⚓ At Sea' : v.vesselStatus === 'in_port' ? '🏁 In Port' : v.vesselStatus === 'in_maintenance' ? '🔧 Maintenance' : '🞊 Drydock'}
               </div>
             </div>
           </div>
         );
       })}
-      {/* Legend */}
-      <div style={{ position: 'absolute', bottom: 12, left: 12, display: 'flex', gap: 12, alignItems: 'center', zIndex: 10 }}>
+      {/* Legend — glass pill on light bg */}
+      <div style={{ position: 'absolute', bottom: 10, left: 10, display: 'flex', gap: 8, alignItems: 'center', zIndex: 10, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', borderRadius: 20, padding: '4px 10px', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
         {[
           { color: '#3b82f6', label: 'At Sea' },
           { color: '#22c55e', label: 'In Port' },
@@ -202,8 +192,8 @@ function FleetMap() {
           { color: '#94a3b8', label: 'Drydock' },
         ].map(item => (
           <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color }}></div>
-            <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11 }}>{item.label}</span>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color, boxShadow: `0 0 4px ${item.color}` }}></div>
+            <span style={{ color: '#374151', fontSize: 10, fontWeight: 500 }}>{item.label}</span>
           </div>
         ))}
       </div>
@@ -292,7 +282,7 @@ function VesselCard({ vessel }: { vessel: typeof vessels[0] }) {
 // Clean stat card (no pastel, white bg)
 function StatTile({ label, value, icon, accentColor }: { label: string; value: number | string; icon: React.ReactNode; accentColor: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>{label}</span>
         <span style={{ color: accentColor }}>{icon}</span>
@@ -308,7 +298,7 @@ export function AdminDashboard() {
   const inMaint = vessels.filter(v => v.vesselStatus === 'in_maintenance').length;
 
   return (
-    <div className="p-5 min-h-full w-full" style={{ background: '#f8fafc' }}>
+    <div className="p-5 min-h-full w-full" style={{ background: 'transparent' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
@@ -333,21 +323,21 @@ export function AdminDashboard() {
       {/* Row 2: Fleet Map (2/3) + Health Score (1/3) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 20 }}>
         {/* Fleet Map */}
-        <div style={{ gridColumn: 'span 2', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', background: '#0a1628' }}>
-          <div style={{ padding: '12px 16px', background: '#0a1628', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ gridColumn: 'span 2', borderRadius: 16, overflow: 'hidden', background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
+          <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
             <div>
-              <div style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>Fleet Map</div>
-              <div style={{ color: 'rgba(147,197,253,0.6)', fontSize: 12 }}>{vessels.length} vessels tracked globally</div>
+              <div style={{ color: '#1C1C1E', fontWeight: 600, fontSize: 14 }}>Fleet Map</div>
+              <div style={{ color: '#94A3B8', fontSize: 12 }}>{vessels.length} vessels tracked globally</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'rgba(147,197,253,0.6)' }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block', animation: 'pulse 2s infinite' }}></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#22c55e', fontWeight: 500 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }}></span>
               Live tracking
             </div>
           </div>
           <FleetMap />
         </div>
         {/* Health Score */}
-        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 20 }}>
+        <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', padding: 20 }}>
           <HealthGauge score={81} />
         </div>
       </div>
@@ -355,7 +345,7 @@ export function AdminDashboard() {
       {/* Row 3: Fuel Chart | Maintenance Heatmap | Crew Readiness */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 20 }}>
         {/* Fuel Chart */}
-        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 18 }}>
+        <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', padding: 18 }}>
           <h3 className="text-sm font-semibold text-slate-800 mb-1">Fuel Consumption</h3>
           <p className="text-xs text-slate-500 mb-3">Fleet total (MT) · Jan–Jun 2025</p>
           <div style={{ height: 160 }}>
@@ -381,7 +371,7 @@ export function AdminDashboard() {
         </div>
 
         {/* Maintenance Heatmap */}
-        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 18 }}>
+        <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', padding: 18 }}>
           <h3 className="text-sm font-semibold text-slate-800 mb-1">Maintenance Activity</h3>
           <p className="text-xs text-slate-500 mb-3">Completion rate by vessel × day</p>
           <div className="space-y-1.5">
@@ -413,7 +403,7 @@ export function AdminDashboard() {
         </div>
 
         {/* Crew Readiness */}
-        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 18 }}>
+        <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', padding: 18 }}>
           <h3 className="text-sm font-semibold text-slate-800 mb-1">Crew Readiness</h3>
           <p className="text-xs text-slate-500 mb-4">Fleet-wide crew status overview</p>
           <div className="space-y-3">
@@ -423,7 +413,7 @@ export function AdminDashboard() {
               { label: 'Crew Changes', value: 7, color: '#3b82f6' },
               { label: 'Off-signers Due', value: 23, color: '#7c3aed' },
             ].map(item => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 12, background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.7)' }}>
                 <span style={{ fontSize: 13, fontWeight: 500, color: '#334155' }}>{item.label}</span>
                 <span style={{ fontSize: 22, fontWeight: 800, color: item.color }}>{item.value}</span>
               </div>
@@ -433,7 +423,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Row 4: Fleet Cards */}
-      <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 20, marginBottom: 20 }}>
+      <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', padding: 20, marginBottom: 20 }}>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-base font-bold text-slate-900">Fleet Overview</h3>
@@ -448,12 +438,12 @@ export function AdminDashboard() {
       {/* Row 5: Approvals (2/3) + Upcoming Jobs (1/3) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
         {/* Approval Queue */}
-        <div style={{ gridColumn: 'span 2', background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+        <div style={{ gridColumn: 'span 2', background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', overflow: 'hidden' }}>
           <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
               <CheckSquare size={15} className="text-slate-400" />
               Approval Queue
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#FFF3DC', color: '#FF9F0A' }}>18</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#eef2ff', color: '#FF9F0A' }}>18</span>
             </h3>
             <button className="text-xs font-medium" style={{ color: '#3b82f6' }}>View All →</button>
           </div>
@@ -480,7 +470,7 @@ export function AdminDashboard() {
         </div>
 
         {/* Upcoming Jobs */}
-        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+        <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', overflow: 'hidden' }}>
           <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
               <Wrench size={15} className="text-slate-400" />
