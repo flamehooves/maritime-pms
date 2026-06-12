@@ -86,7 +86,7 @@ export function Sidebar() {
           </div>
           {!sidebarCollapsed && (
             <div>
-              <span className="text-white font-semibold text-sm tracking-tight">MarineOps</span>
+              <span className="text-white font-semibold text-sm tracking-tight">PalLite</span>
               <div className="text-xs" style={{ color: '#6B7280' }}>PMS Platform</div>
             </div>
           )}

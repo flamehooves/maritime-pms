@@ -68,7 +68,7 @@ export function LoginPage() {
         </div>
 
         <h1 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', marginBottom: 8, textAlign: 'center' }}>
-          MarineOps
+          PalLite
         </h1>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 36, lineHeight: 1.5 }}>
           Planned Maintenance System<br />Sign in with your Zoho account to continue
