@@ -1,6 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import { AuthProvider } from './context/AuthContext';
+import { RequireAuth } from './components/auth/RequireAuth';
+import { LoginPage } from './pages/Login/LoginPage';
+import { RedirectPage } from './pages/Auth/RedirectPage';
 import { Layout } from './components/layout/Layout';
 import { DashboardPage } from './pages/Dashboard/index';
 import { VesselsPage } from './pages/Vessels/VesselsPage';
@@ -17,26 +21,40 @@ import { SettingsPage } from './pages/Settings/SettingsPage';
 
 function App() {
   return (
-    <AppProvider>
-      <BrowserRouter basename="/maritime-pms">
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="vessels" element={<VesselsPage />} />
-            <Route path="vessels/:id" element={<VesselDetailPage />} />
-            <Route path="equipment" element={<EquipmentPage />} />
-            <Route path="equipment/overview" element={<EquipmentOverviewPage />} />
-            <Route path="job-plans" element={<JobPlansPage />} />
-            <Route path="job-orders" element={<JobOrdersPage />} />
-            <Route path="spares" element={<SparesPage />} />
-            <Route path="defects" element={<DefectsPage />} />
-            <Route path="approvals" element={<ApprovalsPage />} />
-            <Route path="reports" element={<ReportsPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <BrowserRouter basename="/maritime-pms">
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/redirect" element={<RedirectPage />} />
+
+            {/* Protected routes */}
+            <Route
+              path="/"
+              element={
+                <RequireAuth>
+                  <Layout />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<DashboardPage />} />
+              <Route path="vessels" element={<VesselsPage />} />
+              <Route path="vessels/:id" element={<VesselDetailPage />} />
+              <Route path="equipment" element={<EquipmentPage />} />
+              <Route path="equipment/overview" element={<EquipmentOverviewPage />} />
+              <Route path="job-plans" element={<JobPlansPage />} />
+              <Route path="job-orders" element={<JobOrdersPage />} />
+              <Route path="spares" element={<SparesPage />} />
+              <Route path="defects" element={<DefectsPage />} />
+              <Route path="approvals" element={<ApprovalsPage />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AppProvider>
+    </AuthProvider>
   );
 }
 
