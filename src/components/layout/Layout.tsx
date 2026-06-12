@@ -9,8 +9,8 @@ export function Layout() {
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto">
-          <div className="min-h-full">
+        <main className="flex-1 overflow-y-auto w-full">
+          <div className="min-h-full w-full">
             <Outlet />
           </div>
         </main>
