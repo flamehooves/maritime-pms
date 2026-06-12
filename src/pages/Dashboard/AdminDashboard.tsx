@@ -53,16 +53,20 @@ const upcomingJobs = [
   { vessel: 'NORTHERN STAR', equipment: 'CARGO PUMP NO.1', job: 'Annual Inspection', dueDate: 'Jan 18', priority: 'High', assignedTo: '2nd Engineer' },
 ];
 
+const P = 'https://images.pexels.com/photos';
+const Q = '?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop';
 const vesselTypeImages: Record<string, string> = {
-  'Bulk Carrier': 'https://images.unsplash.com/photo-1605745341112-85968b19335b?w=600&q=80',
-  'Container Vessel': 'https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=600&q=80',
-  'General Cargo': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&q=80',
-  'Chemical Tanker': 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600&q=80',
-  'Tanker': 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600&q=80',
-  'Product Tanker': 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600&q=80',
-  'LPG Carrier': 'https://images.unsplash.com/photo-1516937941344-00b4e0337589?w=600&q=80',
-  'OBO Carrier': 'https://images.unsplash.com/photo-1519751138087-5bf79df62d5b?w=600&q=80',
-  'default': 'https://images.unsplash.com/photo-1548032885-b5e38734688a?w=600&q=80',
+  'Cruise Ship':     `${P}/33270055/pexels-photo-33270055.jpeg${Q}`,
+  'Bulk Carrier':    `${P}/12204300/pexels-photo-12204300.jpeg${Q}`,
+  'Container Vessel':`${P}/20821680/pexels-photo-20821680.jpeg${Q}`,
+  'General Cargo':   `${P}/30463262/pexels-photo-30463262.jpeg${Q}`,
+  'Chemical Tanker': `${P}/27275198/pexels-photo-27275198.jpeg${Q}`,
+  'Tanker':          `${P}/27275198/pexels-photo-27275198.jpeg${Q}`,
+  'Product Tanker':  `${P}/27275198/pexels-photo-27275198.jpeg${Q}`,
+  'LPG Carrier':     `${P}/1036866/pexels-photo-1036866.jpeg${Q}`,
+  'OBO Carrier':     `${P}/7572149/pexels-photo-7572149.jpeg${Q}`,
+  'Ro-Ro Vessel':    `${P}/262353/pexels-photo-262353.jpeg${Q}`,
+  'default':         `${P}/12204300/pexels-photo-12204300.jpeg${Q}`,
 };
 
 function getVesselImage(type: string): string {

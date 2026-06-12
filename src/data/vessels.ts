@@ -2,6 +2,13 @@ import type { Vessel } from '../types';
 
 export const vessels: Vessel[] = [
   {
+    id: 'v0', name: 'AURORA PRINCESS', imo: '9912345', type: 'Cruise Ship',
+    flag: 'Bahamas', buildYear: 2019, owner: 'Pacific Cruise Lines Ltd',
+    manager: 'Pacific Marine Management', status: 'active', classSociety: "Lloyd's Register",
+    dwt: 12000, grt: 168000, callSign: 'C6AP1', port: 'Nassau',
+    vesselStatus: 'at_sea', mapPosition: { x: 29, y: 38 },  // Caribbean Sea (24°W, 18°N)
+  },
+  {
     id: 'v1', name: 'MAHAKALI', imo: '9876543', type: 'Bulk Carrier',
     flag: 'Panama', buildYear: 2015, owner: 'Mahakali Shipping Ltd',
     manager: 'Pacific Marine Management', status: 'active', classSociety: "Lloyd's Register",
