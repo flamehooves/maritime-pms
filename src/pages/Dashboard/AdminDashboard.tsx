@@ -4,8 +4,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { Ship, Wrench, AlertCircle, CheckSquare, Anchor } from 'lucide-react';
-import { StatCard } from '../../components/ui/StatCard';
-import { PriorityBadge, StatusBadge } from '../../components/ui/StatusBadge';
+import { PriorityBadge } from '../../components/ui/StatusBadge';
 import { vessels } from '../../data/vessels';
 
 const fuelData = [
@@ -54,16 +53,20 @@ const upcomingJobs = [
   { vessel: 'NORTHERN STAR', equipment: 'CARGO PUMP NO.1', job: 'Annual Inspection', dueDate: 'Jan 18', priority: 'High', assignedTo: '2nd Engineer' },
 ];
 
-const vesselImages: Record<string, string> = {
-  'Bulk Carrier': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&q=80',
-  'Chemical Tanker': 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400&q=80',
-  'Product Tanker': 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400&q=80',
-  'Container Vessel': 'https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=400&q=80',
-  'default': 'https://images.unsplash.com/photo-1516937941344-00b4e0337589?w=400&q=80',
+const vesselTypeImages: Record<string, string> = {
+  'Bulk Carrier': 'https://images.unsplash.com/photo-1605745341112-85968b19335b?w=600&q=80',
+  'Container Vessel': 'https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=600&q=80',
+  'General Cargo': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&q=80',
+  'Chemical Tanker': 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600&q=80',
+  'Tanker': 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600&q=80',
+  'Product Tanker': 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600&q=80',
+  'LPG Carrier': 'https://images.unsplash.com/photo-1516937941344-00b4e0337589?w=600&q=80',
+  'OBO Carrier': 'https://images.unsplash.com/photo-1519751138087-5bf79df62d5b?w=600&q=80',
+  'default': 'https://images.unsplash.com/photo-1548032885-b5e38734688a?w=600&q=80',
 };
 
 function getVesselImage(type: string): string {
-  return vesselImages[type] ?? vesselImages['default'];
+  return vesselTypeImages[type] ?? vesselTypeImages['default'];
 }
 
 function getHeatmapColor(val: number): string {
@@ -74,74 +77,90 @@ function getHeatmapColor(val: number): string {
 
 function getVesselStatusDot(vs: string | undefined): { color: string; label: string } {
   switch (vs) {
-    case 'at_sea': return { color: '#5B8DEF', label: 'At Sea' };
-    case 'in_port': return { color: '#34C759', label: 'In Port' };
-    case 'in_maintenance': return { color: '#FF9F0A', label: 'Maintenance' };
-    case 'drydock': return { color: '#9CA3AF', label: 'Drydock' };
-    default: return { color: '#9CA3AF', label: 'Unknown' };
+    case 'at_sea': return { color: '#3b82f6', label: 'At Sea' };
+    case 'in_port': return { color: '#22c55e', label: 'In Port' };
+    case 'in_maintenance': return { color: '#f59e0b', label: 'Maintenance' };
+    case 'drydock': return { color: '#94a3b8', label: 'Drydock' };
+    default: return { color: '#94a3b8', label: 'Unknown' };
   }
 }
 
-// Fleet Map with simple SVG continents
+// Fleet Map using PNG world map
 function FleetMap() {
   const mapVessels = vessels.filter(v => v.mapPosition);
 
   return (
-    <div className="relative w-full h-full" style={{ minHeight: '260px' }}>
-      <svg viewBox="0 0 800 400" className="w-full h-full" style={{ background: 'linear-gradient(135deg, #0B1D3A 0%, #0D3060 50%, #0A2447 100%)' }}>
-        {/* Grid lines */}
-        {[0, 100, 200, 300].map(y => (
-          <line key={y} x1="0" y1={y} x2="800" y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-        ))}
-        {[0, 100, 200, 300, 400, 500, 600, 700, 800].map(x => (
-          <line key={x} x1={x} y1="0" x2={x} y2="400" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-        ))}
-
-        {/* North America */}
-        <path d="M80,60 L140,50 L175,70 L185,100 L175,130 L155,140 L135,160 L115,175 L95,170 L75,150 L65,120 L70,90 Z" fill="#1E4A6E" opacity="0.8" />
-        {/* Central America */}
-        <path d="M135,175 L155,170 L160,190 L145,200 L130,195 Z" fill="#1E4A6E" opacity="0.8" />
-        {/* South America */}
-        <path d="M145,205 L175,200 L195,220 L200,260 L190,300 L175,330 L160,340 L145,310 L140,270 L135,230 Z" fill="#1E4A6E" opacity="0.8" />
-        {/* Europe */}
-        <path d="M390,50 L440,45 L460,55 L450,75 L430,80 L410,75 L395,70 Z" fill="#1E4A6E" opacity="0.8" />
-        {/* Africa */}
-        <path d="M400,90 L440,85 L465,100 L475,140 L470,190 L455,230 L435,245 L415,240 L400,210 L395,170 L390,130 L392,100 Z" fill="#1E4A6E" opacity="0.8" />
-        {/* Asia */}
-        <path d="M465,45 L560,40 L620,50 L660,60 L650,90 L620,100 L580,105 L545,110 L510,105 L490,90 L470,80 L455,65 Z" fill="#1E4A6E" opacity="0.8" />
-        {/* Southeast Asia */}
-        <path d="M580,110 L620,105 L640,120 L630,140 L610,145 L590,135 Z" fill="#1E4A6E" opacity="0.8" />
-        {/* Australia */}
-        <path d="M610,220 L660,215 L695,230 L705,265 L695,295 L670,305 L640,300 L615,280 L608,250 Z" fill="#1E4A6E" opacity="0.8" />
-        {/* Russia/North Asia */}
-        <path d="M460,25 L600,20 L660,30 L655,55 L620,50 L560,40 L465,45 Z" fill="#1E4A6E" opacity="0.8" />
-
-        {/* Vessel dots */}
+    <div className="relative w-full" style={{ minHeight: '320px', background: '#0a1628', position: 'relative', overflow: 'hidden' }}>
+      {/* Base map: faint white silhouette */}
+      <img
+        src="/maritime-pms/world-map.png"
+        alt=""
+        aria-hidden="true"
+        style={{
+          filter: 'brightness(0) invert(1) opacity(0.15)',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          position: 'absolute',
+          inset: 0,
+        }}
+      />
+      {/* Blue tinted overlay */}
+      <img
+        src="/maritime-pms/world-map.png"
+        alt=""
+        aria-hidden="true"
+        style={{
+          filter: 'invert(1) sepia(1) saturate(2) hue-rotate(180deg) opacity(0.4)',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          position: 'absolute',
+          inset: 0,
+        }}
+      />
+      {/* SVG overlay for vessel dots */}
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+      >
+        <defs>
+          <style>{`
+            @keyframes ping {
+              0% { transform: scale(1); opacity: 0.7; }
+              100% { transform: scale(2.5); opacity: 0; }
+            }
+            .vessel-ping { animation: ping 2s ease-out infinite; transform-origin: center; transform-box: fill-box; }
+          `}</style>
+        </defs>
         {mapVessels.map(v => {
-          const x = (v.mapPosition!.x / 100) * 800;
-          const y = (v.mapPosition!.y / 100) * 400;
+          const cx = v.mapPosition!.x;
+          const cy = v.mapPosition!.y;
           const { color } = getVesselStatusDot(v.vesselStatus);
+          const isActive = v.vesselStatus === 'at_sea';
           return (
             <g key={v.id}>
-              <circle cx={x} cy={y} r="8" fill={color} opacity="0.25" />
-              <circle cx={x} cy={y} r="5" fill={color} opacity="0.7" />
-              <circle cx={x} cy={y} r="3" fill={color} />
+              <title>{v.name} · {v.port}</title>
+              {isActive && (
+                <circle cx={cx} cy={cy} r="1.8" fill={color} opacity="0.4" className="vessel-ping" />
+              )}
+              <circle cx={cx} cy={cy} r="1.2" fill={color} opacity="0.9" />
             </g>
           );
         })}
       </svg>
-
       {/* Legend */}
-      <div className="absolute bottom-3 left-3 flex items-center gap-3">
+      <div style={{ position: 'absolute', bottom: 12, left: 12, display: 'flex', gap: 12, alignItems: 'center', zIndex: 10 }}>
         {[
-          { color: '#5B8DEF', label: 'At Sea' },
-          { color: '#34C759', label: 'In Port' },
-          { color: '#FF9F0A', label: 'Maintenance' },
-          { color: '#9CA3AF', label: 'Drydock' },
+          { color: '#3b82f6', label: 'At Sea' },
+          { color: '#22c55e', label: 'In Port' },
+          { color: '#f59e0b', label: 'Maintenance' },
+          { color: '#94a3b8', label: 'Drydock' },
         ].map(item => (
-          <div key={item.label} className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full" style={{ background: item.color }}></div>
-            <span className="text-white text-xs opacity-70">{item.label}</span>
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color }}></div>
+            <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11 }}>{item.label}</span>
           </div>
         ))}
       </div>
@@ -206,25 +225,36 @@ function VesselCard({ vessel }: { vessel: typeof vessels[0] }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl cursor-pointer hover:scale-[1.02] transition-all duration-200"
-      style={{ height: '160px', boxShadow: '0 2px 12px rgba(0,0,0,0.10)' }}
+      className="relative overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+      style={{ height: '200px', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.10)' }}
       onClick={() => navigate(`/vessels/${vessel.id}`)}
     >
-      <img src={imgSrc} alt={vessel.name} className="absolute inset-0 w-full h-full object-cover" />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.30) 60%, transparent 100%)' }}></div>
-      <div className="absolute bottom-0 left-0 right-0 p-3">
-        <div className="flex items-end justify-between">
-          <div>
-            <div className="text-white font-bold text-sm leading-tight">{vessel.name}</div>
-            <div className="text-white/70 text-xs">{vessel.type}</div>
-            <div className="text-white/50 text-xs">IMO {vessel.imo}</div>
-          </div>
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: `${color}22`, color: color, border: `1px solid ${color}44` }}>
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }}></div>
-            {label}
-          </div>
+      <img src={imgSrc} alt={vessel.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)' }}></div>
+      {/* Status badge top-right */}
+      <div style={{ position: 'absolute', top: 10, right: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 99, background: `${color}33`, border: `1px solid ${color}66`, fontSize: 11, color, fontWeight: 600 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: color }}></div>
+          {label}
         </div>
       </div>
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 14px' }}>
+        <div style={{ color: '#fff', fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>{vessel.name}</div>
+        <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12, marginTop: 2 }}>{vessel.type}</div>
+      </div>
+    </div>
+  );
+}
+
+// Clean stat card (no pastel, white bg)
+function StatTile({ label, value, icon, accentColor }: { label: string; value: number | string; icon: React.ReactNode; accentColor: string }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>{label}</span>
+        <span style={{ color: accentColor }}>{icon}</span>
+      </div>
+      <div style={{ fontSize: 28, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{value}</div>
     </div>
   );
 }
@@ -235,9 +265,9 @@ export function AdminDashboard() {
   const inMaint = vessels.filter(v => v.vesselStatus === 'in_maintenance').length;
 
   return (
-    <div className="p-5 space-y-5 min-h-full" style={{ background: '#F5F5F7' }}>
+    <div className="p-5 min-h-full w-full" style={{ background: '#f8fafc' }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Fleet Dashboard</h1>
           <p className="text-sm text-slate-500 mt-0.5">Pacific Marine Management · {vessels.length} vessels · Updated just now</p>
@@ -248,51 +278,50 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Row 1: Stat tiles */}
-      <div className="grid grid-cols-5 gap-4">
-        <StatCard size="sm" variant="pastel" label="Total Vessels" value={vessels.length} icon={<Ship size={14} />} color="info" />
-        <StatCard size="sm" variant="pastel" label="At Sea" value={atSea} icon={<Anchor size={14} />} color="teal" />
-        <StatCard size="sm" variant="pastel" label="In Port" value={inPort} icon={<Ship size={14} />} color="success" />
-        <StatCard size="sm" variant="pastel" label="In Maintenance" value={inMaint} icon={<Wrench size={14} />} color="warning" />
-        <StatCard size="sm" variant="pastel" label="Critical Defects" value={7} icon={<AlertCircle size={14} />} color="danger" />
+      {/* Row 1: 5 stat tiles */}
+      <div className="grid grid-cols-5 gap-4 mb-5">
+        <StatTile label="Total Vessels" value={vessels.length} icon={<Ship size={15} />} accentColor="#3b82f6" />
+        <StatTile label="At Sea" value={atSea} icon={<Anchor size={15} />} accentColor="#0ea5e9" />
+        <StatTile label="In Port" value={inPort} icon={<Ship size={15} />} accentColor="#22c55e" />
+        <StatTile label="In Maintenance" value={inMaint} icon={<Wrench size={15} />} accentColor="#f59e0b" />
+        <StatTile label="Critical Defects" value={7} icon={<AlertCircle size={15} />} accentColor="#ef4444" />
       </div>
 
-      {/* Row 2: Fleet Map + Health Score */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Row 2: Fleet Map (2/3) + Health Score (1/3) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 20 }}>
         {/* Fleet Map */}
-        <div className="col-span-2 rounded-2xl overflow-hidden" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)', minHeight: '300px' }}>
-          <div className="px-4 py-3 flex items-center justify-between" style={{ background: '#0B1D3A' }}>
+        <div style={{ gridColumn: 'span 2', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', background: '#0a1628' }}>
+          <div style={{ padding: '12px 16px', background: '#0a1628', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <h3 className="text-white font-semibold text-sm">Fleet Map</h3>
-              <p className="text-blue-300/60 text-xs">{vessels.length} vessels tracked globally</p>
+              <div style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>Fleet Map</div>
+              <div style={{ color: 'rgba(147,197,253,0.6)', fontSize: 12 }}>{vessels.length} vessels tracked globally</div>
             </div>
-            <div className="flex items-center gap-1 text-xs text-blue-300/60">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'rgba(147,197,253,0.6)' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block', animation: 'pulse 2s infinite' }}></span>
               Live tracking
             </div>
           </div>
           <FleetMap />
         </div>
-
         {/* Health Score */}
-        <div className="bento-tile p-4">
+        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 20 }}>
           <HealthGauge score={81} />
         </div>
       </div>
 
-      {/* Row 3: Fuel Chart + Heatmap + Crew Readiness */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Row 3: Fuel Chart | Maintenance Heatmap | Crew Readiness */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 20 }}>
         {/* Fuel Chart */}
-        <div className="bento-tile p-4">
+        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 18 }}>
           <h3 className="text-sm font-semibold text-slate-800 mb-1">Fuel Consumption</h3>
           <p className="text-xs text-slate-500 mb-3">Fleet total (MT) · Jan–Jun 2025</p>
-          <div style={{ height: '160px' }}>
+          <div style={{ height: 160 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={fuelData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                 <defs>
                   <linearGradient id="fuelGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#5B8DEF" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#5B8DEF" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
@@ -302,14 +331,14 @@ export function AdminDashboard() {
                   formatter={(v) => [`${v} MT`, 'Fuel']}
                   contentStyle={{ fontSize: 11, border: 'none', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}
                 />
-                <Area type="monotone" dataKey="fuel" stroke="#5B8DEF" strokeWidth={2} fill="url(#fuelGrad)" />
+                <Area type="monotone" dataKey="fuel" stroke="#3b82f6" strokeWidth={2} fill="url(#fuelGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Maintenance Heatmap */}
-        <div className="bento-tile p-4">
+        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 18 }}>
           <h3 className="text-sm font-semibold text-slate-800 mb-1">Maintenance Activity</h3>
           <p className="text-xs text-slate-500 mb-3">Completion rate by vessel × day</p>
           <div className="space-y-1.5">
@@ -327,13 +356,7 @@ export function AdminDashboard() {
                     key={i}
                     title={`${row.vessel} · ${weekDays[i]} · ${val}%`}
                     className="rounded"
-                    style={{
-                      width: '24px',
-                      height: '20px',
-                      flexShrink: 0,
-                      background: getHeatmapColor(val),
-                      opacity: 0.6 + (val / 100) * 0.4,
-                    }}
+                    style={{ width: '24px', height: '20px', flexShrink: 0, background: getHeatmapColor(val), opacity: 0.6 + (val / 100) * 0.4 }}
                   />
                 ))}
               </div>
@@ -347,19 +370,19 @@ export function AdminDashboard() {
         </div>
 
         {/* Crew Readiness */}
-        <div className="bento-tile p-4">
+        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 18 }}>
           <h3 className="text-sm font-semibold text-slate-800 mb-1">Crew Readiness</h3>
           <p className="text-xs text-slate-500 mb-4">Fleet-wide crew status overview</p>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[
-              { label: 'Active Crew', value: 248, color: '#34C759', bg: '#DCFCE7' },
-              { label: 'Expiring Certs', value: 14, color: '#FF9F0A', bg: '#FFF3DC' },
-              { label: 'Crew Changes', value: 7, color: '#5B8DEF', bg: '#EBF2FF' },
-              { label: 'Off-signers Due', value: 23, color: '#BF5AF2', bg: '#F3E8FF' },
+              { label: 'Active Crew', value: 248, color: '#16a34a' },
+              { label: 'Expiring Certs', value: 14, color: '#d97706' },
+              { label: 'Crew Changes', value: 7, color: '#3b82f6' },
+              { label: 'Off-signers Due', value: 23, color: '#7c3aed' },
             ].map(item => (
-              <div key={item.label} className="flex items-center justify-between p-3 rounded-xl" style={{ background: item.bg }}>
-                <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                <span className="text-xl font-bold" style={{ color: item.color }}>{item.value}</span>
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 12, background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#334155' }}>{item.label}</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: item.color }}>{item.value}</span>
               </div>
             ))}
           </div>
@@ -367,7 +390,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Row 4: Fleet Cards */}
-      <div className="bento-tile p-5">
+      <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 20, marginBottom: 20 }}>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-base font-bold text-slate-900">Fleet Overview</h3>
@@ -379,17 +402,17 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Row 5: Approvals + Upcoming Jobs */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Row 5: Approvals (2/3) + Upcoming Jobs (1/3) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
         {/* Approval Queue */}
-        <div className="bento-tile">
+        <div style={{ gridColumn: 'span 2', background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
           <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
               <CheckSquare size={15} className="text-slate-400" />
               Approval Queue
               <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#FFF3DC', color: '#FF9F0A' }}>18</span>
             </h3>
-            <button className="text-xs font-medium" style={{ color: '#5B8DEF' }}>View All →</button>
+            <button className="text-xs font-medium" style={{ color: '#3b82f6' }}>View All →</button>
           </div>
           <div className="divide-y divide-slate-50">
             {pendingApprovals.map((item, i) => (
@@ -405,12 +428,8 @@ export function AdminDashboard() {
                   <span>{item.date}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button className="flex-1 text-xs py-1 rounded-lg font-medium transition-colors" style={{ background: '#DCFCE7', color: '#15803D' }}>
-                    Approve
-                  </button>
-                  <button className="flex-1 text-xs py-1 rounded-lg font-medium transition-colors" style={{ background: '#F5F5F7', color: '#6B7280' }}>
-                    Review
-                  </button>
+                  <button className="flex-1 text-xs py-1 rounded-lg font-medium" style={{ background: '#DCFCE7', color: '#15803D' }}>Approve</button>
+                  <button className="flex-1 text-xs py-1 rounded-lg font-medium" style={{ background: '#F5F5F7', color: '#6B7280' }}>Review</button>
                 </div>
               </div>
             ))}
@@ -418,14 +437,14 @@ export function AdminDashboard() {
         </div>
 
         {/* Upcoming Jobs */}
-        <div className="bento-tile">
+        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
           <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
               <Wrench size={15} className="text-slate-400" />
               Upcoming Jobs
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#EBF2FF', color: '#5B8DEF' }}>14</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#EBF2FF', color: '#3b82f6' }}>14</span>
             </h3>
-            <button className="text-xs font-medium" style={{ color: '#5B8DEF' }}>View All →</button>
+            <button className="text-xs font-medium" style={{ color: '#3b82f6' }}>View All →</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full data-table">

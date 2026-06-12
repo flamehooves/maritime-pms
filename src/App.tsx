@@ -6,6 +6,7 @@ import { DashboardPage } from './pages/Dashboard/index';
 import { VesselsPage } from './pages/Vessels/VesselsPage';
 import { VesselDetailPage } from './pages/Vessels/VesselDetailPage';
 import { EquipmentPage } from './pages/Equipment/EquipmentPage';
+import { EquipmentOverviewPage } from './pages/Equipment/EquipmentOverviewPage';
 import { JobPlansPage } from './pages/JobPlans/JobPlansPage';
 import { JobOrdersPage } from './pages/JobOrders/JobOrdersPage';
 import { SparesPage } from './pages/Spares/SparesPage';
@@ -24,6 +25,7 @@ function App() {
             <Route path="vessels" element={<VesselsPage />} />
             <Route path="vessels/:id" element={<VesselDetailPage />} />
             <Route path="equipment" element={<EquipmentPage />} />
+            <Route path="equipment/overview" element={<EquipmentOverviewPage />} />
             <Route path="job-plans" element={<JobPlansPage />} />
             <Route path="job-orders" element={<JobOrdersPage />} />
             <Route path="spares" element={<SparesPage />} />

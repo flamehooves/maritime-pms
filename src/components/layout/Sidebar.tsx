@@ -1,17 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Ship, Cog, ClipboardList, Wrench, Package,
   AlertTriangle, CheckSquare, BarChart3, Settings, ChevronLeft,
-  ChevronRight, Anchor
+  ChevronRight, Anchor, LayoutGrid, ChevronDown
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { vessels } from '../../data/vessels';
 import type { Role } from '../../types';
 
 const allNavItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
   { path: '/vessels', label: 'Vessel Register', icon: Ship, roles: ['admin', 'chief_engineer'] as Role[] },
   { path: '/equipment', label: 'Equipment', icon: Cog, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
+  { path: '/equipment/overview', label: 'Equip. Overview', icon: LayoutGrid, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
   { path: '/job-plans', label: 'Job Plans', icon: ClipboardList, roles: ['admin', 'chief_engineer'] as Role[] },
   { path: '/job-orders', label: 'Job Orders', icon: Wrench, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
   { path: '/spares', label: 'Spares', icon: Package, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
@@ -39,11 +41,22 @@ const roleNames: Record<Role, string> = {
   technician: 'John Torres',
 };
 
+function getVesselStatusColor(vs: string | undefined): string {
+  switch (vs) {
+    case 'at_sea': return '#3b82f6';
+    case 'in_port': return '#22c55e';
+    case 'in_maintenance': return '#f59e0b';
+    case 'drydock': return '#94a3b8';
+    default: return '#94a3b8';
+  }
+}
+
 export function Sidebar() {
-  const { currentRole, sidebarCollapsed, setSidebarCollapsed, currentVessel } = useApp();
+  const { currentRole, sidebarCollapsed, setSidebarCollapsed, currentVessel, setCurrentVessel } = useApp();
   const location = useLocation();
   const visibleItems = allNavItems.filter(item => item.roles.includes(currentRole));
   const roleInfo = roleLabels[currentRole];
+  const [vesselDropdownOpen, setVesselDropdownOpen] = useState(false);
 
   return (
     <div
@@ -58,7 +71,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center px-3 h-14 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#5B8DEF' }}>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#3b82f6' }}>
             <Anchor size={16} color="white" />
           </div>
           {!sidebarCollapsed && (
@@ -70,14 +83,73 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Vessel indicator */}
+      {/* Vessel selector */}
       {!sidebarCollapsed && (
-        <div className="px-3 py-2.5 mx-3 mt-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          <div className="text-xs font-medium" style={{ color: '#6B7280' }}>Current Vessel</div>
-          <div className="text-sm font-semibold text-white mt-0.5 flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></div>
-            {currentVessel.name}
-          </div>
+        <div className="px-3 mt-3 relative">
+          <button
+            onClick={() => setVesselDropdownOpen(o => !o)}
+            className="w-full rounded-xl px-3 py-2.5 text-left transition-colors"
+            style={{ background: 'rgba(255,255,255,0.06)' }}
+          >
+            <div className="text-xs font-medium mb-0.5" style={{ color: '#6B7280' }}>Current Vessel</div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ background: getVesselStatusColor(currentVessel.vesselStatus) }}
+                ></div>
+                <span className="text-sm font-semibold text-white truncate" style={{ maxWidth: 120 }}>{currentVessel.name}</span>
+              </div>
+              <ChevronDown
+                size={13}
+                style={{
+                  color: '#6B7280',
+                  transform: vesselDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s',
+                  flexShrink: 0,
+                }}
+              />
+            </div>
+          </button>
+
+          {vesselDropdownOpen && (
+            <div
+              className="absolute left-3 right-3 z-50 rounded-xl overflow-hidden"
+              style={{
+                top: 'calc(100% + 4px)',
+                background: '#1f2937',
+                border: '1px solid rgba(255,255,255,0.10)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                maxHeight: 220,
+                overflowY: 'auto',
+              }}
+            >
+              {vessels.map(v => (
+                <button
+                  key={v.id}
+                  onClick={() => {
+                    setCurrentVessel(v);
+                    setVesselDropdownOpen(false);
+                  }}
+                  className="w-full px-3 py-2 text-left flex items-center gap-2 transition-colors"
+                  style={{
+                    background: currentVessel.id === v.id ? 'rgba(59,130,246,0.2)' : 'transparent',
+                  }}
+                  onMouseEnter={e => { if (currentVessel.id !== v.id) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; }}
+                  onMouseLeave={e => { if (currentVessel.id !== v.id) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
+                  <div
+                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ background: getVesselStatusColor(v.vesselStatus) }}
+                  ></div>
+                  <div>
+                    <div className="text-xs font-semibold text-white leading-tight">{v.name}</div>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>{v.type}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -87,7 +159,7 @@ export function Sidebar() {
           {visibleItems.map((item) => {
             const isActive = item.path === '/'
               ? location.pathname === '/'
-              : location.pathname.startsWith(item.path);
+              : location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             return (
               <NavLink
                 key={item.path}
