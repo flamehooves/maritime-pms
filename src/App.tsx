@@ -16,7 +16,7 @@ import { SettingsPage } from './pages/Settings/SettingsPage';
 function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/maritime-pms">
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<DashboardPage />} />
