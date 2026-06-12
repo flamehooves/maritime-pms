@@ -30,7 +30,7 @@ export function SettingsPage() {
   ];
 
   return (
-    <div className="p-6 min-h-full">
+    <div className="p-6 min-h-full w-full">
       <div className="mb-5">
         <h1 className="text-xl font-bold text-slate-900">Settings</h1>
         <p className="text-sm text-slate-500 mt-0.5">Pacific Marine Management</p>

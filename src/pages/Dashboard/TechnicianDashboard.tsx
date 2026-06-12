@@ -101,7 +101,7 @@ export function TechnicianDashboard() {
   const [activeJob, setActiveJob] = useState<string | null>(null);
 
   return (
-    <div className="p-6 space-y-5 min-h-full" style={{ background: '#F5F5F7' }}>
+    <div className="p-6 space-y-5 min-h-full w-full" style={{ background: '#F5F5F7' }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -25,7 +25,7 @@ export function JobOrdersPage() {
   };
 
   return (
-    <div className="p-6 min-h-full">
+    <div className="p-6 min-h-full w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>

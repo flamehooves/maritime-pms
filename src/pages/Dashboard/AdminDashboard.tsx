@@ -119,37 +119,76 @@ function FleetMap() {
           inset: 0,
         }}
       />
-      {/* SVG overlay for vessel dots */}
-      <svg
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-      >
-        <defs>
-          <style>{`
-            @keyframes ping {
-              0% { transform: scale(1); opacity: 0.7; }
-              100% { transform: scale(2.5); opacity: 0; }
-            }
-            .vessel-ping { animation: ping 2s ease-out infinite; transform-origin: center; transform-box: fill-box; }
-          `}</style>
-        </defs>
-        {mapVessels.map(v => {
-          const cx = v.mapPosition!.x;
-          const cy = v.mapPosition!.y;
-          const { color } = getVesselStatusDot(v.vesselStatus);
-          const isActive = v.vesselStatus === 'at_sea';
-          return (
-            <g key={v.id}>
-              <title>{v.name} · {v.port}</title>
-              {isActive && (
-                <circle cx={cx} cy={cy} r="1.8" fill={color} opacity="0.4" className="vessel-ping" />
-              )}
-              <circle cx={cx} cy={cy} r="1.2" fill={color} opacity="0.9" />
-            </g>
-          );
-        })}
-      </svg>
+      {/* Vessel dots — CSS-positioned divs for perfect circles */}
+      <style>{`
+        @keyframes vesselPing {
+          0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+          100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+        }
+        .vessel-dot-group:hover .vessel-tooltip { display: block; }
+        .vessel-tooltip { display: none; }
+      `}</style>
+      {mapVessels.map(v => {
+        const { color } = getVesselStatusDot(v.vesselStatus);
+        const isActive = v.vesselStatus === 'at_sea';
+        return (
+          <div
+            key={v.id}
+            className="vessel-dot-group"
+            style={{
+              position: 'absolute',
+              left: `${v.mapPosition!.x}%`,
+              top: `${v.mapPosition!.y}%`,
+              zIndex: 10,
+              cursor: 'pointer',
+            }}
+          >
+            {/* Ping ring */}
+            {isActive && (
+              <div style={{
+                position: 'absolute',
+                width: 20, height: 20,
+                borderRadius: '50%',
+                background: color,
+                opacity: 0,
+                transform: 'translate(-50%, -50%)',
+                animation: 'vesselPing 2s ease-out infinite',
+              }} />
+            )}
+            {/* Dot */}
+            <div style={{
+              position: 'absolute',
+              width: 10, height: 10,
+              borderRadius: '50%',
+              background: color,
+              border: '2px solid rgba(255,255,255,0.8)',
+              transform: 'translate(-50%, -50%)',
+              boxShadow: `0 0 6px ${color}99`,
+            }} />
+            {/* Tooltip */}
+            <div className="vessel-tooltip" style={{
+              position: 'absolute',
+              bottom: 14,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(10,22,40,0.95)',
+              color: '#fff',
+              fontSize: 11,
+              fontWeight: 600,
+              padding: '4px 8px',
+              borderRadius: 6,
+              whiteSpace: 'nowrap',
+              border: `1px solid ${color}66`,
+              pointerEvents: 'none',
+            }}>
+              {v.name}
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 400, fontSize: 10 }}>
+                {v.vesselStatus === 'at_sea' ? '⚓ At Sea' : v.vesselStatus === 'in_port' ? '🏁 In Port' : v.vesselStatus === 'in_maintenance' ? '🔧 Maintenance' : '🞊 Drydock'}
+              </div>
+            </div>
+          </div>
+        );
+      })}
       {/* Legend */}
       <div style={{ position: 'absolute', bottom: 12, left: 12, display: 'flex', gap: 12, alignItems: 'center', zIndex: 10 }}>
         {[

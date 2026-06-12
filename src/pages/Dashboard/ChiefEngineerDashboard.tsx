@@ -70,7 +70,7 @@ const statusDotClass: Record<string, string> = {
 
 export function ChiefEngineerDashboard() {
   return (
-    <div className="p-6 space-y-5 min-h-full">
+    <div className="p-6 space-y-5 min-h-full w-full">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
