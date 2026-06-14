@@ -6,6 +6,7 @@ import {
   ChevronRight, Anchor
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import type { Role } from '../../types';
 
 const allNavItems = [
@@ -43,9 +44,20 @@ const roleNames: Record<Role, string> = {
 
 export function Sidebar() {
   const { currentRole, sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { user } = useAuth();
   const location = useLocation();
   const visibleItems = allNavItems.filter(item => item.roles.includes(currentRole));
   const roleInfo = roleLabels[currentRole];
+
+  // Use real Zoho user data if available, fall back to role defaults
+  const displayName = user?.full_name ?? roleNames[currentRole];
+  const displayRole = user?.profile ?? user?.role ?? roleInfo.label;
+  const initials = displayName
+    .split(' ')
+    .map((w: string) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
   return (
     <div
@@ -120,12 +132,12 @@ export function Sidebar() {
       <div className="border-t px-3 py-3" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-2.5">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${roleInfo.color}`}>
-            {roleAvatars[currentRole]}
+            {initials}
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0">
-              <div className="text-white text-xs font-medium truncate">{roleNames[currentRole]}</div>
-              <div className="text-xs truncate" style={{ color: '#6B7280' }}>{roleInfo.label}</div>
+              <div className="text-white text-xs font-medium truncate">{displayName}</div>
+              <div className="text-xs truncate" style={{ color: '#6B7280' }}>{displayRole}</div>
             </div>
           )}
         </div>
