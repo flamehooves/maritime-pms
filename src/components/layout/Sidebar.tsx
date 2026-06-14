@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Ship, Cog, ClipboardList, Wrench, Package,
   AlertTriangle, CheckSquare, BarChart3, Settings, ChevronLeft,
-  ChevronRight, Anchor
+  ChevronRight, Anchor, LogOut, User, ChevronUp, Mail, Shield
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -22,42 +22,43 @@ const allNavItems = [
   { path: '/settings', label: 'Settings', icon: Settings, roles: ['admin'] as Role[] },
 ];
 
-
 const roleLabels: Record<Role, { label: string; color: string }> = {
   admin: { label: 'Fleet Administrator', color: 'bg-blue-500' },
   chief_engineer: { label: 'Chief Engineer', color: 'bg-emerald-500' },
   technician: { label: 'Technician', color: 'bg-amber-500' },
 };
 
-const roleAvatars: Record<Role, string> = {
-  admin: 'RA',
-  chief_engineer: 'CE',
-  technician: 'JT',
-};
-
 const roleNames: Record<Role, string> = {
-  admin: 'Rajesh Agarwal',
-  chief_engineer: 'Capt. E. Singh',
-  technician: 'John Torres',
+  admin: 'Fleet Admin',
+  chief_engineer: 'Chief Engineer',
+  technician: 'Technician',
 };
-
 
 export function Sidebar() {
   const { currentRole, sidebarCollapsed, setSidebarCollapsed } = useApp();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
   const visibleItems = allNavItems.filter(item => item.roles.includes(currentRole));
   const roleInfo = roleLabels[currentRole];
 
-  // Use real Zoho user data if available, fall back to role defaults
   const displayName = user?.full_name ?? roleNames[currentRole];
   const displayRole = user?.profile ?? user?.role ?? roleInfo.label;
-  const initials = displayName
-    .split(' ')
-    .map((w: string) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+  const displayEmail = user?.email ?? '';
+  const initials = displayName.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
+
+  // Close popover on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    if (profileOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [profileOpen]);
 
   return (
     <div
@@ -72,7 +73,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center px-3 h-14 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#3b82f6' }}>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#4f46e6' }}>
             <Anchor size={16} color="white" />
           </div>
           {!sidebarCollapsed && (
@@ -98,9 +99,7 @@ export function Sidebar() {
                 title={sidebarCollapsed ? item.label : undefined}
                 className={() =>
                   `flex items-center gap-3 px-2.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 ${
-                    isActive
-                      ? 'text-white'
-                      : 'text-gray-400 hover:text-gray-200'
+                    isActive ? 'text-white' : 'text-gray-400 hover:text-gray-200'
                   }`
                 }
                 style={({ isActive: active }) => active
@@ -128,19 +127,115 @@ export function Sidebar() {
         {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
-      {/* User section */}
-      <div className="border-t px-3 py-3" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        <div className="flex items-center gap-2.5">
+      {/* User section with profile popover */}
+      <div className="border-t px-2 py-2 relative" style={{ borderColor: 'rgba(255,255,255,0.06)' }} ref={popoverRef}>
+
+        {/* Profile popover */}
+        {profileOpen && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 'calc(100% + 8px)',
+              left: sidebarCollapsed ? '4px' : '8px',
+              right: '8px',
+              minWidth: sidebarCollapsed ? 200 : undefined,
+              background: '#1f2937',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 14,
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
+              padding: '4px',
+              zIndex: 50,
+            }}
+          >
+            {/* User info card */}
+            <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="flex items-center gap-3 mb-1">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${roleInfo.color}`}>
+                  {initials}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-white text-sm font-semibold truncate">{displayName}</div>
+                  <div className="text-xs truncate" style={{ color: '#9CA3AF' }}>{displayRole}</div>
+                </div>
+              </div>
+              {displayEmail && (
+                <div className="flex items-center gap-2 mt-2" style={{ color: '#6B7280' }}>
+                  <Mail size={12} />
+                  <span className="text-xs truncate">{displayEmail}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Menu items */}
+            <div style={{ padding: '4px 0' }}>
+              <button
+                onClick={() => setProfileOpen(false)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors"
+                style={{ color: '#D1D5DB' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <User size={15} style={{ color: '#9CA3AF' }} />
+                My Profile
+              </button>
+              <button
+                onClick={() => setProfileOpen(false)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors"
+                style={{ color: '#D1D5DB' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <Shield size={15} style={{ color: '#9CA3AF' }} />
+                Account Settings
+              </button>
+            </div>
+
+            {/* Logout */}
+            <div style={{ padding: '4px 0 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <button
+                onClick={() => { setProfileOpen(false); logout(); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors"
+                style={{ color: '#F87171' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(248,113,113,0.1)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <LogOut size={15} />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Trigger button */}
+        <button
+          onClick={() => setProfileOpen(o => !o)}
+          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl transition-colors"
+          style={{ background: profileOpen ? 'rgba(255,255,255,0.08)' : 'transparent' }}
+          onMouseEnter={e => { if (!profileOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+          onMouseLeave={e => { if (!profileOpen) e.currentTarget.style.background = 'transparent'; }}
+          title={sidebarCollapsed ? displayName : undefined}
+        >
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${roleInfo.color}`}>
             {initials}
           </div>
           {!sidebarCollapsed && (
-            <div className="min-w-0">
-              <div className="text-white text-xs font-medium truncate">{displayName}</div>
-              <div className="text-xs truncate" style={{ color: '#6B7280' }}>{displayRole}</div>
-            </div>
+            <>
+              <div className="min-w-0 flex-1 text-left">
+                <div className="text-white text-xs font-medium truncate">{displayName}</div>
+                <div className="text-xs truncate" style={{ color: '#6B7280' }}>{displayRole}</div>
+              </div>
+              <ChevronUp
+                size={13}
+                style={{
+                  color: '#6B7280',
+                  transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s',
+                  flexShrink: 0,
+                }}
+              />
+            </>
           )}
-        </div>
+        </button>
       </div>
     </div>
   );
