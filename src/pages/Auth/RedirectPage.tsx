@@ -22,7 +22,7 @@ export function RedirectPage() {
     const token = accessToken ?? new URLSearchParams(window.location.search).get('access_token');
     if (!token) { setErrorMsg('No access token received. Please try again.'); setStatus('error'); return; }
 
-    saveToken(token);
+    saveToken(token, apiDomain);
 
     // Fetch current Zoho CRM user
     fetch(`${apiDomain}/crm/v3/users?type=CurrentUser`, {

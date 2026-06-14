@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Bell, Search, Menu, ChevronDown, Ship } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useApp, ALL_VESSELS_ID } from '../../context/AppContext';
 import { useLocation } from 'react-router-dom';
-import { vessels } from '../../data/vessels';
+import { useCrmFetch } from '../../hooks/useCrmFetch';
+import { fetchVessels } from '../../services/crmService';
 import type { Role, Vessel } from '../../types';
 
 const roleConfig: Record<Role, { label: string; short: string }> = {
@@ -11,11 +12,9 @@ const roleConfig: Record<Role, { label: string; short: string }> = {
   technician: { label: 'Technician', short: 'Technician' },
 };
 
-// Pages where vessel selector appears
 const VESSEL_SELECTOR_PATHS = ['/equipment', '/job-plans', '/job-orders', '/spares', '/defects', '/reports'];
 
-const ALL_VESSELS_SENTINEL = '__all__';
-const ALL_VESSEL: Vessel = { id: ALL_VESSELS_SENTINEL, name: 'All Vessels' } as unknown as Vessel;
+const ALL_VESSEL: Vessel = { id: ALL_VESSELS_ID, name: 'All Vessels' } as unknown as Vessel;
 
 function getVesselStatusColor(vs: string | undefined): string {
   switch (vs) {
@@ -32,11 +31,12 @@ export function TopBar() {
   const location = useLocation();
   const [searchFocused, setSearchFocused] = useState(false);
   const [vesselOpen, setVesselOpen] = useState(false);
+  const { data: crmVessels } = useCrmFetch(fetchVessels);
 
   const showVesselSelector = VESSEL_SELECTOR_PATHS.some(
     p => location.pathname === p || location.pathname.startsWith(p + '/')
   );
-  const isAllVessels = currentVessel.id === ALL_VESSELS_SENTINEL;
+  const isAllVessels = currentVessel.id === ALL_VESSELS_ID;
 
   return (
     <div
@@ -108,7 +108,6 @@ export function TopBar() {
                   overflowY: 'auto',
                 }}
               >
-                {/* All Vessels */}
                 <button
                   onClick={() => { setCurrentVessel(ALL_VESSEL); setVesselOpen(false); }}
                   className="w-full px-3 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 transition-colors"
@@ -121,7 +120,7 @@ export function TopBar() {
                   </div>
                 </button>
                 <div className="mx-3 my-1" style={{ height: 1, background: 'rgba(0,0,0,0.06)' }} />
-                {vessels.map(v => (
+                {crmVessels.map(v => (
                   <button
                     key={v.id}
                     onClick={() => { setCurrentVessel(v); setVesselOpen(false); }}
@@ -146,7 +145,6 @@ export function TopBar() {
 
       {/* Right */}
       <div className="flex items-center gap-2">
-        {/* Role switcher */}
         <div className="flex items-center gap-1 bg-white/80 rounded-xl p-1" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           {(['admin', 'chief_engineer', 'technician'] as Role[]).map((role) => (
             <button
@@ -163,7 +161,6 @@ export function TopBar() {
           ))}
         </div>
 
-        {/* Notifications */}
         <button className="relative p-2 rounded-xl text-slate-500 hover:bg-white transition-colors" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           <Bell size={18} />
           <span className="absolute top-1 right-1 w-4 h-4 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none" style={{ background: '#FF453A', fontSize: '10px' }}>

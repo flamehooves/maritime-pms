@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Search, SlidersHorizontal } from 'lucide-react';
 import type { Equipment } from '../../types';
-import { equipmentTree } from '../../data/equipment';
 import { useApp } from '../../context/AppContext';
 
 const statusDot: Record<string, string> = {
@@ -101,13 +100,17 @@ function getAllGroupIds(nodes: Equipment[]): string[] {
   return ids;
 }
 
-export function EquipmentTree() {
+interface EquipmentTreeProps {
+  equipmentTree: Equipment[];
+}
+
+export function EquipmentTree({ equipmentTree }: EquipmentTreeProps) {
   const { selectedEquipment, setSelectedEquipment } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCodes, setShowCodes] = useState(true);
   const [filter, setFilter] = useState('all');
-  const allGroupIds = useMemo(() => getAllGroupIds(equipmentTree), []);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['root', '310', '520']));
+  const allGroupIds = useMemo(() => getAllGroupIds(equipmentTree), [equipmentTree]);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -119,7 +122,7 @@ export function EquipmentTree() {
   };
 
   const expandAll = () => setExpandedIds(new Set(allGroupIds));
-  const collapseAll = () => setExpandedIds(new Set(['root']));
+  const collapseAll = () => setExpandedIds(new Set());
 
   const filters = [
     { key: 'all', label: 'All' },
@@ -129,11 +132,7 @@ export function EquipmentTree() {
   ];
 
   return (
-    <div
-      className="flex flex-col bg-white border-r border-slate-200 h-full"
-      style={{ flex: '1', minWidth: 0 }}
-    >
-      {/* Header */}
+    <div className="flex flex-col bg-white border-r border-slate-200 h-full" style={{ flex: '1', minWidth: 0 }}>
       <div className="px-3 py-3 border-b border-slate-200">
         <div className="flex items-center gap-2 mb-2.5">
           <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5">
@@ -174,7 +173,6 @@ export function EquipmentTree() {
         </div>
       </div>
 
-      {/* Legend */}
       <div className="flex items-center gap-3 px-3 py-2 bg-slate-50 border-b border-slate-100">
         {[
           { label: 'Operational', cls: 'bg-emerald-500' },
@@ -188,8 +186,10 @@ export function EquipmentTree() {
         ))}
       </div>
 
-      {/* Tree */}
       <div className="flex-1 overflow-y-auto py-1">
+        {equipmentTree.length === 0 && (
+          <div className="text-center py-8 text-slate-400 text-xs">No equipment found</div>
+        )}
         {equipmentTree.map(node => (
           <TreeNode
             key={node.id}
