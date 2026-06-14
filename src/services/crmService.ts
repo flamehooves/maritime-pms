@@ -13,6 +13,12 @@ function getBase(): string {
   return (localStorage.getItem(API_DOMAIN_KEY) ?? DEFAULT_DOMAIN) + '/crm/v3';
 }
 
+async function safeJson(res: Response): Promise<Record<string, unknown>> {
+  const text = await res.text();
+  if (!text || text.trim() === '') return {};
+  try { return JSON.parse(text); } catch { return {}; }
+}
+
 async function fetchAll(module: string, fields: string[]): Promise<unknown[]> {
   const url = `${getBase()}/${module}?fields=${fields.join(',')}&per_page=200`;
   const res = await fetch(url, { headers: getHeaders() });
@@ -33,6 +39,14 @@ async function fetchAll(module: string, fields: string[]): Promise<unknown[]> {
 
   if (!res.ok) throw new Error(`CRM error: ${String(json.message ?? res.status)}`);
 
+  return (json.data as unknown[]) ?? [];
+}
+
+async function searchRecords(module: string, fields: string[], criteria: string): Promise<unknown[]> {
+  const url = `${getBase()}/${module}/search?criteria=${encodeURIComponent(criteria)}&fields=${fields.join(',')}&per_page=200`;
+  const res = await fetch(url, { headers: getHeaders() });
+  const json = await safeJson(res);
+  if (json.status === 'error' || json.code === 'NO_DATA' || json.code === 'EMPTY_DATA') return [];
   return (json.data as unknown[]) ?? [];
 }
 
@@ -341,6 +355,33 @@ export async function updateJobOrder(id: string, jo: Partial<JobOrder>): Promise
 
 export async function deleteJobOrder(id: string): Promise<void> {
   return deleteRecord('Job_Orders', id);
+}
+
+export async function fetchJobOrdersForApproval(): Promise<JobOrder[]> {
+  const rows = await searchRecords(
+    'Job_Orders', JO_FIELDS,
+    '(Job_Status:equals:Awaiting Review)',
+  );
+  return (rows as Record<string, unknown>[]).map(mapJobOrder);
+}
+
+export async function fetchApprovalHistory(): Promise<JobOrder[]> {
+  const [approved, reopened] = await Promise.all([
+    searchRecords('Job_Orders', JO_FIELDS, '(Job_Status:equals:Approved)'),
+    searchRecords('Job_Orders', JO_FIELDS, '(Job_Status:equals:Reopened)'),
+  ]);
+  return [
+    ...(approved as Record<string, unknown>[]).map(mapJobOrder),
+    ...(reopened as Record<string, unknown>[]).map(mapJobOrder),
+  ];
+}
+
+export async function approveJobOrder(id: string): Promise<void> {
+  return updateRecord('Job_Orders', id, { Job_Status: 'Approved' });
+}
+
+export async function rejectJobOrder(id: string, remarks: string): Promise<void> {
+  return updateRecord('Job_Orders', id, { Job_Status: 'Reopened', Work_Done: remarks });
 }
 
 // ── Defects ────────────────────────────────────────────────────────────────
