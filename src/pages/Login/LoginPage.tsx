@@ -5,7 +5,7 @@ import { Anchor, Shield, Globe, Wrench } from 'lucide-react';
 const ZOHO_CLIENT_ID   = '1000.S6PUMKDAQZBBI6IN0OUF9HOGY8UWKV';
 const ZOHO_REDIRECT_URI = 'https://flamehooves.github.io/maritime-pms/redirect';
 const ZOHO_SCOPE       = 'ZohoCRM.modules.ALL,ZohoCRM.settings.ALL';
-const ZOHO_AUTH_URL    = 'https://accounts.zoho.com/oauth/v2/auth';
+const ZOHO_AUTH_URL    = 'https://accounts.zoho.in/oauth/v2/auth';
 
 function buildZohoLoginUrl(): string {
   const params = new URLSearchParams({
