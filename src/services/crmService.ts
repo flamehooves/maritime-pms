@@ -16,9 +16,24 @@ function getBase(): string {
 async function fetchAll(module: string, fields: string[]): Promise<unknown[]> {
   const url = `${getBase()}/${module}?fields=${fields.join(',')}&per_page=200`;
   const res = await fetch(url, { headers: getHeaders() });
-  if (!res.ok) throw new Error(`CRM fetch failed: ${res.status}`);
-  const json = await res.json();
-  return json.data ?? [];
+
+  // 204 No Content or empty body → no records
+  const text = await res.text();
+  if (!text || text.trim() === '') return [];
+
+  let json: Record<string, unknown>;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`CRM returned non-JSON response (status ${res.status})`);
+  }
+
+  // Zoho returns {"code":"NO_DATA","status":"error"} when module is empty
+  if (json.status === 'error' || json.code === 'NO_DATA' || json.code === 'EMPTY_DATA') return [];
+
+  if (!res.ok) throw new Error(`CRM error: ${String(json.message ?? res.status)}`);
+
+  return (json.data as unknown[]) ?? [];
 }
 
 async function createRecord(module: string, data: Record<string, unknown>): Promise<string> {
