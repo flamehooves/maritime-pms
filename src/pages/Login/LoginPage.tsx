@@ -2,9 +2,9 @@ import React from 'react';
 import { Anchor, Shield, Globe, Wrench } from 'lucide-react';
 
 // ── Zoho OAuth config ─────────────────────────────────────────────────────
-const ZOHO_CLIENT_ID   = '1000.5G04SZPVX2N2ZCOPCI049M3ZLQUPMZ';
+const ZOHO_CLIENT_ID   = '1000.S6PUMKDAQZBBI6IN0OUF9HOGY8UWKV';
 const ZOHO_REDIRECT_URI = 'http://localhost:5178/redirect';
-const ZOHO_SCOPE       = 'Solution.modules.ALL,Solution.settings.ALL';
+const ZOHO_SCOPE       = 'ZohoCRM.modules.ALL,ZohoCRM.settings.ALL';
 const ZOHO_AUTH_URL    = 'https://accounts.zoho.com/oauth/v2/auth';
 
 function buildZohoLoginUrl(): string {
