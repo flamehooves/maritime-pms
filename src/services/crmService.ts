@@ -67,9 +67,10 @@ async function deleteRecord(module: string, id: string): Promise<void> {
 // ── Vessels ────────────────────────────────────────────────────────────────
 
 const VESSEL_FIELDS = ['Name', 'IMO_Number', 'Vessel_Type', 'Flag', 'Gross_Tonnage',
-  'Build_Year', 'Classification_Society', 'Vessel_Status', 'Current_Port', 'Health_Score'];
+  'Build_Year', 'Classification_Society', 'Vessel_Status', 'Current_Port', 'Health_Score',
+  'Vessel_Image_URL'];
 
-function mapVessel(r: Record<string, unknown>): Vessel {
+function mapVessel(r: Record<string, unknown>): Vessel & { imageUrl?: string } {
   return {
     id: String(r.id),
     name: String(r.Name ?? ''),
@@ -86,12 +87,30 @@ function mapVessel(r: Record<string, unknown>): Vessel {
     callSign: '',
     port: String(r.Current_Port ?? ''),
     vesselStatus: (r.Vessel_Status as Vessel['vesselStatus']) ?? 'at_sea',
+    imageUrl: String(r.Vessel_Image_URL ?? '') || undefined,
   };
 }
 
-export async function fetchVessels(): Promise<Vessel[]> {
+export async function fetchVessels(): Promise<(Vessel & { imageUrl?: string })[]> {
   const rows = await fetchAll('Vessels', VESSEL_FIELDS);
   return (rows as Record<string, unknown>[]).map(mapVessel);
+}
+
+export async function fetchVesselById(id: string): Promise<(Vessel & { imageUrl?: string }) | null> {
+  const url = `${getBase()}/Vessels/${id}?fields=${VESSEL_FIELDS.join(',')}`;
+  const res = await fetch(url, { headers: getHeaders() });
+  const text = await res.text();
+  if (!text || !res.ok) return null;
+  try {
+    const json = JSON.parse(text);
+    const r = json.data?.[0] ?? json;
+    if (!r || !r.id) return null;
+    return mapVessel(r as Record<string, unknown>);
+  } catch { return null; }
+}
+
+export async function updateVesselImageUrl(id: string, imageUrl: string): Promise<void> {
+  return updateRecord('Vessels', id, { Vessel_Image_URL: imageUrl });
 }
 
 export async function createVessel(v: Partial<Vessel>): Promise<string> {

@@ -47,6 +47,7 @@ export function Sidebar() {
   const displayName = user?.full_name ?? roleNames[currentRole];
   const displayRole = user?.profile ?? user?.role ?? roleInfo.label;
   const displayEmail = user?.email ?? '';
+  const profilePic = user?.profile_pic as string | undefined;
   const initials = displayName.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
 
   // Close popover on outside click
@@ -150,8 +151,10 @@ export function Sidebar() {
             {/* User info card */}
             <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="flex items-center gap-3 mb-1">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${roleInfo.color}`}>
-                  {initials}
+                <div className={`w-9 h-9 rounded-full flex-shrink-0 overflow-hidden ${profilePic ? '' : `flex items-center justify-center text-white text-sm font-bold ${roleInfo.color}`}`}>
+                  {profilePic
+                    ? <img src={profilePic} alt={displayName} className="w-full h-full object-cover" />
+                    : initials}
                 </div>
                 <div className="min-w-0">
                   <div className="text-white text-sm font-semibold truncate">{displayName}</div>
@@ -215,8 +218,10 @@ export function Sidebar() {
           onMouseLeave={e => { if (!profileOpen) e.currentTarget.style.background = 'transparent'; }}
           title={sidebarCollapsed ? displayName : undefined}
         >
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${roleInfo.color}`}>
-            {initials}
+          <div className={`w-8 h-8 rounded-full flex-shrink-0 overflow-hidden ${profilePic ? '' : `flex items-center justify-center text-white text-xs font-bold ${roleInfo.color}`}`}>
+            {profilePic
+              ? <img src={profilePic} alt={displayName} className="w-full h-full object-cover" />
+              : initials}
           </div>
           {!sidebarCollapsed && (
             <>

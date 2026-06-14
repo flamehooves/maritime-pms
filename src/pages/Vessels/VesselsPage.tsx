@@ -4,6 +4,7 @@ import { Plus, Loader, AlertCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useCrmFetch } from '../../hooks/useCrmFetch';
 import { fetchVessels } from '../../services/crmService';
+import type { Vessel } from '../../types';
 
 const P = 'https://images.pexels.com/photos';
 const Q = '?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop';
@@ -77,7 +78,7 @@ export function VesselsPage() {
       {!loading && vessels.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           {vessels.map(v => {
-            const imgSrc = getVesselImage(v.type);
+            const imgSrc = (v as Vessel & { imageUrl?: string }).imageUrl || getVesselImage(v.type);
             const { color, label } = getVesselStatusColor(v.vesselStatus);
             return (
               <div

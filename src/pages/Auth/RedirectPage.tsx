@@ -32,11 +32,12 @@ export function RedirectPage() {
       .then(data => {
         const raw = data?.users?.[0] ?? {};
         saveUser({
-          id:        String(raw.id ?? ''),
-          full_name: raw.full_name ?? raw.name ?? 'User',
-          email:     raw.email ?? '',
-          role:      raw.role?.name ?? '',
-          profile:   raw.profile?.name ?? '',
+          id:          String(raw.id ?? ''),
+          full_name:   raw.full_name ?? raw.name ?? 'User',
+          email:       raw.email ?? '',
+          role:        raw.role?.name ?? '',
+          profile:     raw.profile?.name ?? '',
+          profile_pic: raw.profile_pic ?? '',
           ...raw,
         });
       })
