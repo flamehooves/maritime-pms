@@ -24,12 +24,27 @@ const glassPanel: React.CSSProperties = {
 };
 
 function buildEquipmentTree(flat: Equipment[]): Equipment[] {
-  const bySystem: Record<string, Equipment[]> = {};
+  // Build a true N-level hierarchy using parentId, then group root nodes by System.
+  const byId: Record<string, Equipment> = {};
+  for (const eq of flat) byId[eq.id] = { ...eq, children: [] };
+
+  const roots: Equipment[] = [];
   for (const eq of flat) {
-    const sys = eq.system || 'General';
-    if (!bySystem[sys]) bySystem[sys] = [];
-    bySystem[sys].push(eq);
+    if (eq.parentId && byId[eq.parentId]) {
+      byId[eq.parentId].children!.push(byId[eq.id]);
+    } else {
+      roots.push(byId[eq.id]);
+    }
   }
+
+  // Group top-level nodes by System
+  const bySystem: Record<string, Equipment[]> = {};
+  for (const node of roots) {
+    const sys = node.system || 'General';
+    if (!bySystem[sys]) bySystem[sys] = [];
+    bySystem[sys].push(node);
+  }
+
   return Object.entries(bySystem).map(([sys, items]) => ({
     id: `sys_${sys}`,
     code: sys,

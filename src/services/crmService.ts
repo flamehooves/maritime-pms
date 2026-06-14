@@ -157,10 +157,12 @@ export async function deleteVessel(id: string): Promise<void> {
 
 const EQ_FIELDS = ['Name', 'Equipment_Name', 'Vessel', 'System', 'Equipment_Type', 'Maker',
   'Model', 'Serial_Number', 'Equipment_Status', 'Criticality', 'Install_Date',
-  'Last_Maintenance_Date', 'Next_Due_Date', 'Location_On_Vessel', 'Responsible_Rank'];
+  'Last_Maintenance_Date', 'Next_Due_Date', 'Location_On_Vessel', 'Responsible_Rank',
+  'Parent_Equipment'];
 
-function mapEquipment(r: Record<string, unknown>): Equipment {
+function mapEquipment(r: Record<string, unknown>): Equipment & { vesselId?: string } {
   const vessel = r.Vessel as Record<string, unknown> | null;
+  const parent = r.Parent_Equipment as Record<string, unknown> | null;
   return {
     id: String(r.id),
     code: String(r.Name ?? ''),
@@ -177,8 +179,10 @@ function mapEquipment(r: Record<string, unknown>): Equipment {
     nextDue: String(r.Next_Due_Date ?? ''),
     location: String(r.Location_On_Vessel ?? ''),
     responsibleRank: String(r.Responsible_Rank ?? ''),
-    parentId: vessel ? String(vessel.id) : undefined,
-    parentName: vessel ? String(vessel.name) : undefined,
+    // parentId = parent equipment ID for hierarchy; vesselId used for vessel filtering
+    parentId: parent ? String(parent.id) : undefined,
+    parentName: parent ? String(parent.name) : undefined,
+    vesselId: vessel ? String(vessel.id) : undefined,
   };
 }
 
@@ -186,7 +190,7 @@ export async function fetchEquipments(vesselId?: string): Promise<Equipment[]> {
   const rows = await fetchAll('Equipments', EQ_FIELDS);
   const mapped = (rows as Record<string, unknown>[]).map(mapEquipment);
   if (vesselId && vesselId !== '__all__') {
-    return mapped.filter(e => e.parentId === vesselId);
+    return mapped.filter(e => e.vesselId === vesselId);
   }
   return mapped;
 }
