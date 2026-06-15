@@ -10,8 +10,8 @@ const EMPTY: Partial<SparePart> = { partNumber: '', description: '', maker: '', 
 
 const inp = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400";
 
-function Modal({ title, onClose, onSave, saving, children }: {
-  title: string; onClose: () => void; onSave: () => void; saving: boolean; children: React.ReactNode;
+function Modal({ title, onClose, onSave, saving, error, children }: {
+  title: string; onClose: () => void; onSave: () => void; saving: boolean; error?: string | null; children: React.ReactNode;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }}>
@@ -20,7 +20,13 @@ function Modal({ title, onClose, onSave, saving, children }: {
           <h2 className="text-sm font-bold text-slate-900">{title}</h2>
           <button onClick={onClose}><X size={16} className="text-slate-400" /></button>
         </div>
-        <div className="overflow-y-auto p-6 flex flex-col gap-4">{children}</div>
+        <div className="overflow-y-auto p-6 flex flex-col gap-4">
+          {error && (
+            <div className="flex items-start gap-2 p-3 rounded-xl text-xs text-red-700 mb-1" style={{ background: '#FEE2E2', border: '1px solid #FECACA' }}>
+              <span>{error}</span>
+            </div>
+          )}
+          {children}</div>
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
           <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
           <button onClick={onSave} disabled={saving} className="px-4 py-2 rounded-xl bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 disabled:opacity-50 flex items-center gap-2">
@@ -44,6 +50,7 @@ export function SparesPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -73,12 +80,13 @@ export function SparesPage() {
   }
 
   async function handleSave() {
-    setSaving(true);
+    setSaving(true); setSaveError(null);
     try {
       if (editId) await updateSparePart(editId, { qtyOnboard: form.qtyOnboard, location: form.location });
       else await createSparePart(form, currentVesselId !== '__all__' ? currentVesselId : undefined);
       setModalOpen(false); reload();
-    } finally { setSaving(false); }
+    } catch (e) { setSaveError(String(e)); }
+    finally { setSaving(false); }
   }
 
   async function handleDelete() {
@@ -94,7 +102,7 @@ export function SparesPage() {
   return (
     <div className="p-6 min-h-full w-full">
       {modalOpen && (
-        <Modal title={editId ? 'Edit Spare Part' : 'Add Spare Part'} onClose={() => setModalOpen(false)} onSave={handleSave} saving={saving}>
+        <Modal title={editId ? 'Edit Spare Part' : 'Add Spare Part'} onClose={() => { setModalOpen(false); setSaveError(null); }} onSave={handleSave} saving={saving} error={saveError}>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Part Number *">
               <input className={inp} value={form.partNumber ?? ''} onChange={set('partNumber')} placeholder="e.g. MAN-4570-012" disabled={!!editId} />

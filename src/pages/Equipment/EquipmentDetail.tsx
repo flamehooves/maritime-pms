@@ -66,8 +66,8 @@ const inp = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:o
 const td: React.CSSProperties = { fontSize: 12, color: '#374151', padding: '10px 12px', verticalAlign: 'middle' };
 const tdMono: React.CSSProperties = { ...td, fontFamily: 'monospace', fontWeight: 600, color: '#64748B' };
 
-function Modal({ title, onClose, onSave, saving, children }: {
-  title: string; onClose: () => void; onSave: () => void; saving: boolean; children: React.ReactNode;
+function Modal({ title, onClose, onSave, saving, error, children }: {
+  title: string; onClose: () => void; onSave: () => void; saving: boolean; error?: string | null; children: React.ReactNode;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
@@ -76,7 +76,15 @@ function Modal({ title, onClose, onSave, saving, children }: {
           <h2 className="text-sm font-bold text-slate-900">{title}</h2>
           <button onClick={onClose}><X size={15} className="text-slate-400" /></button>
         </div>
-        <div className="overflow-y-auto p-5 flex flex-col gap-3">{children}</div>
+        <div className="overflow-y-auto p-5 flex flex-col gap-3">
+          {error && (
+            <div className="flex items-start gap-2 p-3 rounded-xl text-xs text-red-700" style={{ background: '#FEE2E2', border: '1px solid #FECACA' }}>
+              <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+          {children}
+        </div>
         <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-100">
           <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 text-xs text-slate-600 hover:bg-slate-50">Cancel</button>
           <button onClick={onSave} disabled={saving} className="px-4 py-2 rounded-xl text-white text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5" style={{ background: PRIMARY }}>
@@ -119,6 +127,12 @@ const sampleTimeline = [
 export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   const [activeTab, setActiveTab] = useState('overview');
   const { currentRole, currentVesselId } = useApp();
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Use the equipment's own vessel when "All Vessels" is selected
+  const effectiveVesselId =
+    currentVesselId !== '__all__' ? currentVesselId :
+    (equipment as Equipment & { vesselId?: string }).vesselId;
 
   // Live CRM data per tab
   const { data: jobPlans, reload: reloadJP } = useCrmFetch(
@@ -142,12 +156,13 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   const [joDel, setJoDel] = useState<string | null>(null);
 
   async function saveJO() {
-    setJoSaving(true);
+    setJoSaving(true); setSaveError(null);
     try {
       if (joEdit) await updateJobOrder(joEdit, { status: joForm.status, remarks: joForm.remarks });
-      else await createJobOrder({ ...joForm, equipmentId: equipment.id }, currentVesselId !== '__all__' ? currentVesselId : undefined);
+      else await createJobOrder({ ...joForm, equipmentId: equipment.id }, effectiveVesselId);
       setJoModal(false); reloadJO();
-    } finally { setJoSaving(false); }
+    } catch (e) { setSaveError(String(e)); }
+    finally { setJoSaving(false); }
   }
 
   // ── Job Plan modal ──
@@ -159,18 +174,19 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
 
   async function saveJP() {
-    setJpSaving(true);
+    setJpSaving(true); setSaveError(null);
     try {
       if (jpEdit) await updateJobPlan(jpEdit, jpForm);
-      else await createJobPlan({ ...jpForm, equipmentId: equipment.id }, currentVesselId !== '__all__' ? currentVesselId : undefined);
+      else await createJobPlan({ ...jpForm, equipmentId: equipment.id }, effectiveVesselId);
       setJpModal(false); reloadJP();
-    } finally { setJpSaving(false); }
+    } catch (e) { setSaveError(String(e)); }
+    finally { setJpSaving(false); }
   }
 
   async function generateJO(jp: JobPlan) {
     setGeneratingFor(jp.id);
     try {
-      await createJobOrder({ title: jp.title, assignedTo: jp.responsibleRank, priority: 'Medium', status: 'Not Started', dueDate: jp.nextDue, linkedPlanId: jp.id, equipmentId: equipment.id }, currentVesselId !== '__all__' ? currentVesselId : undefined);
+      await createJobOrder({ title: jp.title, assignedTo: jp.responsibleRank, priority: 'Medium', status: 'Not Started', dueDate: jp.nextDue, linkedPlanId: jp.id, equipmentId: equipment.id }, effectiveVesselId);
       reloadJO();
     } finally { setGeneratingFor(null); }
   }
@@ -183,12 +199,13 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   const [spDel, setSpDel] = useState<string | null>(null);
 
   async function saveSP() {
-    setSpSaving(true);
+    setSpSaving(true); setSaveError(null);
     try {
       if (spEdit) await updateSparePart(spEdit, { qtyOnboard: spForm.qtyOnboard, location: spForm.location });
-      else await createSparePart({ ...spForm, equipmentId: equipment.id }, currentVesselId !== '__all__' ? currentVesselId : undefined);
+      else await createSparePart({ ...spForm, equipmentId: equipment.id }, effectiveVesselId);
       setSpModal(false); reloadSP();
-    } finally { setSpSaving(false); }
+    } catch (e) { setSaveError(String(e)); }
+    finally { setSpSaving(false); }
   }
 
   // ── Defect modal ──
@@ -199,12 +216,13 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   const [defDel, setDefDel] = useState<string | null>(null);
 
   async function saveDef() {
-    setDefSaving(true);
+    setDefSaving(true); setSaveError(null);
     try {
       if (defEdit) await updateDefect(defEdit, { status: defForm.status, resolution: defForm.resolution, resolvedDate: defForm.resolvedDate });
-      else await createDefect({ ...defForm, equipmentId: equipment.id }, currentVesselId !== '__all__' ? currentVesselId : undefined);
+      else await createDefect({ ...defForm, equipmentId: equipment.id }, effectiveVesselId);
       setDefModal(false); reloadDef();
-    } finally { setDefSaving(false); }
+    } catch (e) { setSaveError(String(e)); }
+    finally { setDefSaving(false); }
   }
 
   const [deleting, setDeleting] = useState(false);
@@ -219,7 +237,7 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
 
       {/* Modals */}
       {joModal && (
-        <Modal title={joEdit ? 'Update Job Order' : 'Create Job Order'} onClose={() => setJoModal(false)} onSave={saveJO} saving={joSaving}>
+        <Modal title={joEdit ? 'Update Job Order' : 'Create Job Order'} onClose={() => { setJoModal(false); setSaveError(null); }} onSave={saveJO} saving={joSaving} error={saveError}>
           <FLabel label="Job Title *"><input className={inp} value={joForm.title ?? ''} onChange={e => setJoForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Annual Overhaul" disabled={!!joEdit} /></FLabel>
           <div className="grid grid-cols-2 gap-3">
             <FLabel label="Priority">
@@ -240,7 +258,7 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
       {joDel && <ConfirmDelete onConfirm={() => runDelete(() => deleteJobOrder(joDel).then(() => setJoDel(null)), reloadJO)} onCancel={() => setJoDel(null)} deleting={deleting} />}
 
       {jpModal && (
-        <Modal title={jpEdit ? 'Edit Job Plan' : 'Add Job Plan'} onClose={() => setJpModal(false)} onSave={saveJP} saving={jpSaving}>
+        <Modal title={jpEdit ? 'Edit Job Plan' : 'Add Job Plan'} onClose={() => { setJpModal(false); setSaveError(null); }} onSave={saveJP} saving={jpSaving} error={saveError}>
           <FLabel label="Plan Title *"><input className={inp} value={jpForm.title ?? ''} onChange={e => setJpForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Annual Overhaul" /></FLabel>
           <div className="grid grid-cols-2 gap-3">
             <FLabel label="Plan Code"><input className={inp} value={jpForm.code ?? ''} onChange={e => setJpForm(f => ({ ...f, code: e.target.value }))} placeholder="JP-ME-001" /></FLabel>
@@ -255,7 +273,7 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
       {jpDel && <ConfirmDelete onConfirm={() => runDelete(() => deleteJobPlan(jpDel).then(() => setJpDel(null)), reloadJP)} onCancel={() => setJpDel(null)} deleting={deleting} />}
 
       {spModal && (
-        <Modal title={spEdit ? 'Edit Spare Part' : 'Add Spare Part'} onClose={() => setSpModal(false)} onSave={saveSP} saving={spSaving}>
+        <Modal title={spEdit ? 'Edit Spare Part' : 'Add Spare Part'} onClose={() => { setSpModal(false); setSaveError(null); }} onSave={saveSP} saving={spSaving} error={saveError}>
           <FLabel label="Part Number *"><input className={inp} value={spForm.partNumber ?? ''} onChange={e => setSpForm(f => ({ ...f, partNumber: e.target.value }))} disabled={!!spEdit} /></FLabel>
           <FLabel label="Description *"><input className={inp} value={spForm.description ?? ''} onChange={e => setSpForm(f => ({ ...f, description: e.target.value }))} disabled={!!spEdit} /></FLabel>
           <div className="grid grid-cols-2 gap-3">
@@ -268,7 +286,7 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
       {spDel && <ConfirmDelete onConfirm={() => runDelete(() => deleteSparePart(spDel).then(() => setSpDel(null)), reloadSP)} onCancel={() => setSpDel(null)} deleting={deleting} />}
 
       {defModal && (
-        <Modal title={defEdit ? 'Update Defect' : 'Report Defect'} onClose={() => setDefModal(false)} onSave={saveDef} saving={defSaving}>
+        <Modal title={defEdit ? 'Update Defect' : 'Report Defect'} onClose={() => { setDefModal(false); setSaveError(null); }} onSave={saveDef} saving={defSaving} error={saveError}>
           <FLabel label="Description *"><textarea className={inp} rows={2} value={defForm.description ?? ''} onChange={e => setDefForm(f => ({ ...f, description: e.target.value }))} disabled={!!defEdit} /></FLabel>
           <div className="grid grid-cols-2 gap-3">
             <FLabel label="Severity">
@@ -278,7 +296,7 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
             </FLabel>
             <FLabel label="Status">
               <select className={inp} value={defForm.status ?? 'Open'} onChange={e => setDefForm(f => ({ ...f, status: e.target.value as Defect['status'] }))}>
-                {['Open','Under Investigation','Rectified','Closed','Deferred'].map(s => <option key={s}>{s}</option>)}
+                {['Open','Under Investigation','Resolved','Closed'].map(s => <option key={s}>{s}</option>)}
               </select>
             </FLabel>
           </div>
