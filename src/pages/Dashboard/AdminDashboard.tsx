@@ -195,7 +195,7 @@ export function AdminDashboard() {
   const atSea = vessels.filter(v => v.vesselStatus === 'at_sea').length;
   const inPort = vessels.filter(v => v.vesselStatus === 'in_port').length;
   const inMaint = vessels.filter(v => v.vesselStatus === 'in_maintenance').length;
-  const criticalDefects = allDefects.filter(d => d.severity === 'Critical' && d.status !== 'Closed' && d.status !== 'Rectified').length;
+  const criticalDefects = allDefects.filter(d => d.severity === 'Critical' && d.status !== 'Closed').length;
 
   // Upcoming jobs: not completed, sorted by due date, top 5
   const upcomingJobs = [...allJobOrders]
@@ -378,7 +378,7 @@ export function AdminDashboard() {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
                     <span className="px-1.5 py-0.5 rounded-md text-xs" style={{ background: '#F5F5F7', color: '#6B7280' }}>Job Order</span>
-                    <span>{item.vesselName || '—'}</span>
+                    <span>{item.vessel || '—'}</span>
                     {item.dueDate && <><span>·</span><span>{item.dueDate}</span></>}
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -420,7 +420,7 @@ export function AdminDashboard() {
                 <tbody>
                   {upcomingJobs.map(job => (
                     <tr key={job.id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate('/job-orders')}>
-                      <td className="text-xs font-semibold text-slate-700">{job.vesselName || '—'}</td>
+                      <td className="text-xs font-semibold text-slate-700">{job.vessel || '—'}</td>
                       <td className="text-xs text-slate-600 max-w-[120px] truncate">{job.title}</td>
                       <td className="text-xs text-slate-600 whitespace-nowrap">{job.dueDate}</td>
                       <td><PriorityBadge priority={job.priority} /></td>

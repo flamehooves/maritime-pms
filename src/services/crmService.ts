@@ -81,7 +81,7 @@ async function deleteRecord(module: string, id: string): Promise<void> {
 // ── Vessels ────────────────────────────────────────────────────────────────
 
 const VESSEL_FIELDS = ['Name', 'IMO_Number', 'Vessel_Type', 'Flag', 'Gross_Tonnage',
-  'Build_Year', 'Classification_Society', 'Vessel_Status', 'Current_Port', 'Health_Score',
+  'Build_Year', 'Classification_Society', 'Vessel_Status', 'Current_Port',
   'Vessel_Image_URL', 'Map_Position_X', 'Map_Position_Y', 'Call_Sign', 'Manager', 'DWT', 'GRT'];
 
 function mapVessel(r: Record<string, unknown>): Vessel & { imageUrl?: string; mapPosition?: { x: number; y: number } } {
