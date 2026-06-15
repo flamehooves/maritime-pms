@@ -107,6 +107,13 @@ export function JobPlansPage() {
     setTimeout(() => setToast(null), 3000);
   }
 
+  function autoNextDue(lastDone: string, interval: number): string {
+    if (!lastDone || !interval) return '';
+    const d = new Date(lastDone);
+    d.setDate(d.getDate() + interval);
+    return d.toISOString().split('T')[0];
+  }
+
   const set = (k: keyof JobPlan) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: k === 'interval' || k === 'estimatedDuration' ? Number(e.target.value) : e.target.value }));
 
@@ -123,7 +130,10 @@ export function JobPlansPage() {
               <input className={inp} value={form.code ?? ''} onChange={set('code')} placeholder="JP-ME-001" />
             </Field>
             <Field label="Frequency (days) *">
-              <input className={inp} type="number" min={1} value={form.interval ?? 90} onChange={set('interval')} />
+              <input className={inp} type="number" min={1} value={form.interval ?? 90} onChange={e => {
+                const interval = Number(e.target.value);
+                setForm(f => ({ ...f, interval, nextDue: autoNextDue(f.lastDone ?? '', interval) }));
+              }} />
             </Field>
           </div>
           <Field label="Plan Title *">
@@ -142,7 +152,10 @@ export function JobPlansPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Last Done">
-              <input className={inp} type="date" value={form.lastDone ?? ''} onChange={set('lastDone')} />
+              <input className={inp} type="date" value={form.lastDone ?? ''} onChange={e => {
+                const lastDone = e.target.value;
+                setForm(f => ({ ...f, lastDone, nextDue: autoNextDue(lastDone, f.interval ?? 90) }));
+              }} />
             </Field>
             <Field label="Next Due">
               <input className={inp} type="date" value={form.nextDue ?? ''} onChange={set('nextDue')} />

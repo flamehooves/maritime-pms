@@ -173,6 +173,13 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   const [jpDel, setJpDel] = useState<string | null>(null);
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
 
+  function autoNextDue(lastDone: string, interval: number): string {
+    if (!lastDone || !interval) return '';
+    const d = new Date(lastDone);
+    d.setDate(d.getDate() + interval);
+    return d.toISOString().split('T')[0];
+  }
+
   async function saveJP() {
     setJpSaving(true); setSaveError(null);
     try {
@@ -262,10 +269,16 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
           <FLabel label="Plan Title *"><input className={inp} value={jpForm.title ?? ''} onChange={e => setJpForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Annual Overhaul" /></FLabel>
           <div className="grid grid-cols-2 gap-3">
             <FLabel label="Plan Code"><input className={inp} value={jpForm.code ?? ''} onChange={e => setJpForm(f => ({ ...f, code: e.target.value }))} placeholder="JP-ME-001" /></FLabel>
-            <FLabel label="Frequency (days)"><input className={inp} type="number" value={jpForm.interval ?? 90} onChange={e => setJpForm(f => ({ ...f, interval: Number(e.target.value) }))} /></FLabel>
+            <FLabel label="Frequency (days)"><input className={inp} type="number" value={jpForm.interval ?? 90} onChange={e => {
+              const interval = Number(e.target.value);
+              setJpForm(f => ({ ...f, interval, nextDue: autoNextDue(f.lastDone ?? '', interval) }));
+            }} /></FLabel>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <FLabel label="Last Done"><input className={inp} type="date" value={jpForm.lastDone ?? ''} onChange={e => setJpForm(f => ({ ...f, lastDone: e.target.value }))} /></FLabel>
+            <FLabel label="Last Done"><input className={inp} type="date" value={jpForm.lastDone ?? ''} onChange={e => {
+              const lastDone = e.target.value;
+              setJpForm(f => ({ ...f, lastDone, nextDue: autoNextDue(lastDone, f.interval ?? 90) }));
+            }} /></FLabel>
             <FLabel label="Next Due"><input className={inp} type="date" value={jpForm.nextDue ?? ''} onChange={e => setJpForm(f => ({ ...f, nextDue: e.target.value }))} /></FLabel>
           </div>
         </Modal>
