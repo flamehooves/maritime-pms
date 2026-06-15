@@ -82,9 +82,11 @@ async function deleteRecord(module: string, id: string): Promise<void> {
 
 const VESSEL_FIELDS = ['Name', 'IMO_Number', 'Vessel_Type', 'Flag', 'Gross_Tonnage',
   'Build_Year', 'Classification_Society', 'Vessel_Status', 'Current_Port', 'Health_Score',
-  'Vessel_Image_URL'];
+  'Vessel_Image_URL', 'Map_Position_X', 'Map_Position_Y', 'Call_Sign', 'Manager', 'DWT', 'GRT'];
 
-function mapVessel(r: Record<string, unknown>): Vessel & { imageUrl?: string } {
+function mapVessel(r: Record<string, unknown>): Vessel & { imageUrl?: string; mapPosition?: { x: number; y: number } } {
+  const mx = r.Map_Position_X != null ? Number(r.Map_Position_X) : null;
+  const my = r.Map_Position_Y != null ? Number(r.Map_Position_Y) : null;
   return {
     id: String(r.id),
     name: String(r.Name ?? ''),
@@ -93,15 +95,16 @@ function mapVessel(r: Record<string, unknown>): Vessel & { imageUrl?: string } {
     flag: String(r.Flag ?? ''),
     buildYear: Number(r.Build_Year ?? 0),
     owner: '',
-    manager: '',
+    manager: String(r.Manager ?? ''),
     status: 'active',
     classSociety: String(r.Classification_Society ?? ''),
-    dwt: 0,
-    grt: Number(r.Gross_Tonnage ?? 0),
-    callSign: '',
+    dwt: Number(r.DWT ?? r.Gross_Tonnage ?? 0),
+    grt: Number(r.GRT ?? r.Gross_Tonnage ?? 0),
+    callSign: String(r.Call_Sign ?? ''),
     port: String(r.Current_Port ?? ''),
     vesselStatus: (r.Vessel_Status as Vessel['vesselStatus']) ?? 'at_sea',
     imageUrl: String(r.Vessel_Image_URL ?? '') || undefined,
+    mapPosition: mx != null && my != null && !isNaN(mx) && !isNaN(my) ? { x: mx, y: my } : undefined,
   };
 }
 
@@ -134,18 +137,29 @@ export async function createVessel(v: Partial<Vessel>): Promise<string> {
     Vessel_Type: v.type,
     Flag: v.flag,
     Build_Year: v.buildYear,
-    Gross_Tonnage: v.grt,
+    GRT: v.grt,
+    DWT: v.dwt,
     Classification_Society: v.classSociety,
     Vessel_Status: v.vesselStatus ?? 'at_sea',
     Current_Port: v.port,
+    Call_Sign: v.callSign,
+    Manager: v.manager,
   });
 }
 
 export async function updateVessel(id: string, v: Partial<Vessel>): Promise<void> {
   return updateRecord('Vessels', id, {
     Name: v.name,
+    Vessel_Type: v.type,
+    Flag: v.flag,
+    Build_Year: v.buildYear,
+    GRT: v.grt,
+    DWT: v.dwt,
+    Classification_Society: v.classSociety,
     Vessel_Status: v.vesselStatus,
     Current_Port: v.port,
+    Call_Sign: v.callSign,
+    Manager: v.manager,
   });
 }
 

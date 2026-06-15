@@ -5,11 +5,11 @@ import {
 } from 'recharts';
 import { Ship, Wrench, AlertCircle, CheckSquare, Anchor, Loader } from 'lucide-react';
 import { PriorityBadge } from '../../components/ui/StatusBadge';
-import { vessels as staticVessels } from '../../data/vessels';
 import { useCrmFetch } from '../../hooks/useCrmFetch';
 import { fetchVessels, fetchJobOrdersForApproval, fetchJobOrders, fetchDefects, approveJobOrder } from '../../services/crmService';
 import { useApp } from '../../context/AppContext';
 import type { Vessel } from '../../types';
+// NOTE: staticVessels removed — all vessel data now from Zoho CRM
 
 const fuelData = [
   { month: 'Jan', fuel: 4200 },
@@ -71,9 +71,9 @@ function getVesselStatusDot(vs: string | undefined): { color: string; label: str
   }
 }
 
-// Fleet Map — uses static position data overlaid on world map
-function FleetMap() {
-  const mapVessels = staticVessels.filter(v => v.mapPosition);
+// Fleet Map — uses CRM vessel position data overlaid on world map
+function FleetMap({ vessels }: { vessels: (Vessel & { mapPosition?: { x: number; y: number } })[] }) {
+  const mapVessels = vessels.filter(v => v.mapPosition);
   return (
     <div className="relative w-full" style={{ height: '320px', background: '#EEF6FC', overflow: 'hidden', borderRadius: 12 }}>
       <img src="/maritime-pms/world-map.png" alt="" aria-hidden="true"
@@ -239,14 +239,14 @@ export function AdminDashboard() {
           <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
             <div>
               <div style={{ color: '#1C1C1E', fontWeight: 600, fontSize: 14 }}>Fleet Map</div>
-              <div style={{ color: '#94A3B8', fontSize: 12 }}>{staticVessels.length} vessels tracked globally</div>
+              <div style={{ color: '#94A3B8', fontSize: 12 }}>{vessels.length} vessels tracked globally</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#22c55e', fontWeight: 500 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
               Live tracking
             </div>
           </div>
-          <FleetMap />
+          <FleetMap vessels={vessels} />
         </div>
         <div style={{ ...glass, padding: 20 }}>
           <HealthGauge score={81} />
