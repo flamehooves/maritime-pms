@@ -49,6 +49,7 @@ export interface Equipment {
   responsibleRank?: string;
   description?: string;
   runningHours?: number;
+  nextDueHours?: number;
   vesselId?: string;
   // Extended fields
   safetyLevel?: string;
@@ -170,6 +171,60 @@ export interface RunningHoursLog {
   notes?: string;
 }
 
+export interface TomForm {
+  id: string;
+  name: string;
+  vesselId?: string;
+  vesselName?: string;
+  month: number;
+  year: number;
+  weekNumber: number;
+  category: string;
+  w1Completed: boolean;
+  w2Completed: boolean;
+  w3Completed: boolean;
+  w4Completed: boolean;
+  w1Date?: string;
+  w2Date?: string;
+  w3Date?: string;
+  w4Date?: string;
+  responsibleRank?: string;
+  remarks?: string;
+}
+
+export interface PostponedJob {
+  id: string;
+  name: string;
+  jobOrderId?: string;
+  jobOrderName?: string;
+  equipmentId?: string;
+  equipmentName?: string;
+  vesselId?: string;
+  jobTitle: string;
+  safetyLevel: string;
+  originalDueDate: string;
+  postponedToDate: string;
+  postponementCount: number;
+  reason: string;
+  requestedBy: string;
+  approvalStatus: string;
+  approvedBy?: string;
+  approvedDate?: string;
+  rejectionRemarks?: string;
+}
+
+export interface PmsRefData {
+  id: string;
+  name: string;
+  value: string;
+  category: string;
+  code?: string;
+  description?: string;
+  sortOrder?: number;
+  isActive: boolean;
+  parentValue?: string;
+}
+
 export interface JobPlan {
   id: string;
   code: string;
@@ -211,6 +266,7 @@ export interface JobOrder {
   estimatedHours: number;
   actualHours?: number;
   sparesConsumed?: SpareConsumption[];
+  jobType?: string;
 }
 
 export interface SpareConsumption {

@@ -19,6 +19,7 @@ import { ApprovalsPage } from './pages/Approvals/ApprovalsPage';
 import { ReportsPage } from './pages/Reports/ReportsPage';
 import { SettingsPage } from './pages/Settings/SettingsPage';
 import { DueJobsPage } from './pages/DueJobs/DueJobsPage';
+import { TomFormsPage } from './pages/TomForms/TomFormsPage';
 import { RunningHoursPage } from './pages/RunningHours/RunningHoursPage';
 import { GuaranteeClaimsPage } from './pages/GuaranteeClaims/GuaranteeClaimsPage';
 import { TechnicalFormsPage } from './pages/TechnicalForms/TechnicalFormsPage';
@@ -50,6 +51,7 @@ function App() {
               <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="due-jobs" element={<DueJobsPage />} />
+              <Route path="tom-forms" element={<TomFormsPage />} />
               <Route path="running-hours" element={<RunningHoursPage />} />
               <Route path="guarantee-claims" element={<GuaranteeClaimsPage />} />
               <Route path="technical-forms" element={<TechnicalFormsPage />} />

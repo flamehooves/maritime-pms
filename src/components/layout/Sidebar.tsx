@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Ship, Cog, ClipboardList, Wrench, Package,
   AlertTriangle, CheckSquare, BarChart3, Settings, ChevronLeft,
   ChevronRight, Anchor, LogOut, User, ChevronUp, Mail, Shield,
-  Clock, Gauge, FileText, LayoutTemplate, SlidersHorizontal
+  Clock, Gauge, FileText, LayoutTemplate, SlidersHorizontal, ClipboardCheck
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -20,6 +20,7 @@ const allNavItems: NavItem[] = [
   { path: '/due-jobs',           label: 'Due Jobs',          icon: Clock,          roles: ['admin', 'chief_engineer', 'technician'] },
   { path: '/job-orders',         label: 'Job Orders',        icon: Wrench,         roles: ['admin', 'chief_engineer', 'technician'] },
   { path: '/running-hours',      label: 'Running Hours',     icon: Gauge,          roles: ['admin', 'chief_engineer', 'technician'] },
+  { path: '/tom-forms',          label: 'TOM Forms',         icon: ClipboardCheck, roles: ['admin', 'chief_engineer', 'technician'] },
   { path: '/technical-forms',    label: 'Technical Forms',   icon: FileText,       roles: ['admin', 'chief_engineer', 'technician'] },
   { path: '/reports',            label: 'Reports',           icon: BarChart3,      roles: ['admin', 'chief_engineer'] },
   { path: '/guarantee-claims',   label: 'Guarantee Claims',  icon: Shield,         roles: ['admin', 'chief_engineer'] },

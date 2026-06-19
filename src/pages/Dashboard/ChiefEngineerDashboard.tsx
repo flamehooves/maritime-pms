@@ -1,9 +1,9 @@
-import React from 'react';
-import { Wrench, Clock, AlertTriangle, Package, CheckCircle, Activity, ClipboardList, AlertCircle, Loader } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Wrench, Clock, AlertTriangle, Package, CheckCircle, Activity, ClipboardList, AlertCircle, Loader, Gauge, ClipboardCheck, BarChart2, TrendingUp } from 'lucide-react';
 import { StatCard } from '../../components/ui/StatCard';
 import { PriorityBadge, SeverityBadge, StatusBadge } from '../../components/ui/StatusBadge';
 import { useCrmFetch } from '../../hooks/useCrmFetch';
-import { fetchJobOrders, fetchDefects, fetchEquipments, fetchSpareParts } from '../../services/crmService';
+import { fetchJobOrders, fetchDefects, fetchEquipments, fetchSpareParts, fetchRunningHoursLog, fetchTomForms } from '../../services/crmService';
 import { useApp } from '../../context/AppContext';
 
 const statusDotClass: Record<string, string> = {
@@ -30,6 +30,36 @@ function formatDate(dateStr?: string): string {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
+function MonthLabel(monthOffset: number): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - monthOffset);
+  return d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' });
+}
+
+function HoursBar({ current, nextDue, label }: { current: number; nextDue: number; label: string }) {
+  const pct = Math.min(100, Math.round((current / nextDue) * 100));
+  const color = pct >= 95 ? '#DC2626' : pct >= 85 ? '#D97706' : '#059669';
+  const remaining = nextDue - current;
+  return (
+    <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#1C1C1E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{label}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color, flexShrink: 0, marginLeft: 8 }}>
+          {pct >= 100 ? 'OVERDUE' : `${remaining.toLocaleString()} hrs left`}
+        </span>
+      </div>
+      <div style={{ height: 5, borderRadius: 99, background: 'rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 99, background: color, transition: 'width 0.4s' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+        <span style={{ fontSize: 10, color: '#94A3B8' }}>{current.toLocaleString()} hrs</span>
+        <span style={{ fontSize: 10, color, fontWeight: 600 }}>{pct}%</span>
+        <span style={{ fontSize: 10, color: '#94A3B8' }}>{nextDue.toLocaleString()} hrs</span>
+      </div>
+    </div>
+  );
+}
+
 export function ChiefEngineerDashboard() {
   const { currentVesselId, currentVessel } = useApp();
 
@@ -37,8 +67,15 @@ export function ChiefEngineerDashboard() {
   const { data: defects, loading: defLoading } = useCrmFetch(() => fetchDefects(currentVesselId), [currentVesselId]);
   const { data: equipments, loading: eqLoading } = useCrmFetch(() => fetchEquipments(currentVesselId), [currentVesselId]);
   const { data: spares } = useCrmFetch(() => fetchSpareParts(currentVesselId), [currentVesselId]);
+  const { data: rhLogs, loading: rhLoading } = useCrmFetch(() => fetchRunningHoursLog(currentVesselId), [currentVesselId]);
 
-  const loading = joLoading || defLoading || eqLoading;
+  const now = new Date();
+  const { data: tomForms, loading: tomLoading } = useCrmFetch(
+    () => fetchTomForms(currentVesselId !== '__all__' ? currentVesselId : undefined, now.getMonth() + 1, now.getFullYear()),
+    [currentVesselId]
+  );
+
+  const loading = joLoading || defLoading || eqLoading || rhLoading || tomLoading;
 
   const openJOs = jobOrders.filter(jo => jo.status !== 'Completed' && jo.status !== 'Approved');
   const overdueJOs = jobOrders.filter(jo => jo.dueDate && new Date(jo.dueDate) < new Date() && jo.status !== 'Completed' && jo.status !== 'Approved');
@@ -47,7 +84,6 @@ export function ChiefEngineerDashboard() {
     if (jo.status !== 'Completed' && jo.status !== 'Approved') return false;
     if (!jo.completionDate) return false;
     const d = new Date(jo.completionDate);
-    const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
   const awaitingReview = jobOrders.filter(jo => jo.status === 'Awaiting Review');
@@ -55,6 +91,62 @@ export function ChiefEngineerDashboard() {
   const criticalDefects = openDefects.filter(d => d.severity === 'Critical');
   const lowStockSpares = spares.filter(sp => sp.qtyOnboard <= sp.minStock && sp.minStock > 0);
   const criticalEq = equipments.filter(e => e.criticality === 'critical' && !e.isGroup).slice(0, 8);
+
+  // Running hours: latest per equipment, filter only those with nextDueHours set
+  const latestByEquip: Record<string, number> = {};
+  for (const log of rhLogs) {
+    if (!log.equipmentId) continue;
+    if (!latestByEquip[log.equipmentId] || log.runningHoursReading > latestByEquip[log.equipmentId]) {
+      latestByEquip[log.equipmentId] = log.runningHoursReading;
+    }
+  }
+  const rhEquipments = equipments
+    .filter(e => !e.isGroup && e.nextDueHours && e.nextDueHours > 0)
+    .map(e => ({ ...e, currentHours: latestByEquip[e.id] ?? e.runningHours ?? 0 }))
+    .filter(e => e.currentHours > 0)
+    .sort((a, b) => {
+      const pctA = a.currentHours / (a.nextDueHours ?? 1);
+      const pctB = b.currentHours / (b.nextDueHours ?? 1);
+      return pctB - pctA;
+    })
+    .slice(0, 6);
+
+  // TOM Forms: weekly completion summary
+  const tomWeeks = ['w1Completed', 'w2Completed', 'w3Completed', 'w4Completed'] as const;
+  const tomTotals = tomWeeks.map((w, i) => ({
+    week: `W${i + 1}`,
+    done: tomForms.filter(f => f[w]).length,
+    total: tomForms.length,
+  }));
+
+  // 12-month maintenance chart
+  const monthlyData = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => {
+      const offset = 11 - i;
+      const d = new Date();
+      d.setMonth(d.getMonth() - offset);
+      const m = d.getMonth();
+      const y = d.getFullYear();
+      const due = jobOrders.filter(jo => {
+        if (!jo.dueDate) return false;
+        const dd = new Date(jo.dueDate);
+        return dd.getMonth() === m && dd.getFullYear() === y;
+      }).length;
+      const completed = jobOrders.filter(jo => {
+        if (!jo.completionDate) return false;
+        const dd = new Date(jo.completionDate);
+        return dd.getMonth() === m && dd.getFullYear() === y && (jo.status === 'Completed' || jo.status === 'Approved');
+      }).length;
+      const overdue = jobOrders.filter(jo => {
+        if (!jo.dueDate) return false;
+        const dd = new Date(jo.dueDate);
+        return dd.getMonth() === m && dd.getFullYear() === y && jo.status !== 'Completed' && jo.status !== 'Approved' && dd < new Date();
+      }).length;
+      return { label: MonthLabel(offset), due, completed, overdue };
+    });
+  }, [jobOrders]);
+
+  const maxBar = Math.max(...monthlyData.map(d => Math.max(d.due, d.completed, d.overdue)), 1);
 
   // Group this week's jobs by due date
   const byDate: Record<string, typeof dueThisWeek> = {};
@@ -186,6 +278,149 @@ export function ChiefEngineerDashboard() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* TOM Forms + Running Hours row */}
+          <div className="grid grid-cols-2 gap-5">
+            {/* TOM Forms — current month completion */}
+            <div className="card overflow-hidden">
+              <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ClipboardCheck size={14} className="text-indigo-500" />
+                  <h3 className="text-sm font-semibold text-slate-800">TOM Forms — {now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</h3>
+                </div>
+                <span className="text-xs text-slate-400">{tomForms.length} forms</span>
+              </div>
+              {tomForms.length === 0 ? (
+                <div className="py-10 text-center text-xs text-slate-400">No TOM forms for this month.</div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-4 divide-x divide-slate-100 border-b border-slate-100">
+                    {tomTotals.map(t => {
+                      const pct = t.total > 0 ? Math.round((t.done / t.total) * 100) : 0;
+                      const color = pct === 100 ? '#059669' : pct >= 75 ? '#4f46e6' : pct >= 50 ? '#D97706' : '#DC2626';
+                      return (
+                        <div key={t.week} style={{ padding: '14px 12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1 }}>{pct}%</div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', marginTop: 3 }}>{t.week}</div>
+                          <div style={{ fontSize: 10, color: '#CBD5E1', marginTop: 2 }}>{t.done}/{t.total}</div>
+                          <div style={{ height: 3, borderRadius: 99, background: 'rgba(0,0,0,0.06)', marginTop: 6, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99 }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="overflow-y-auto divide-y divide-slate-100" style={{ maxHeight: 200 }}>
+                    {tomForms.slice(0, 8).map(f => {
+                      const done = [f.w1Completed, f.w2Completed, f.w3Completed, f.w4Completed].filter(Boolean).length;
+                      const pct = Math.round((done / 4) * 100);
+                      return (
+                        <div key={f.id} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#1C1C1E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+                            <div style={{ fontSize: 10, color: '#94A3B8' }}>{f.category} · {f.responsibleRank || '—'}</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                            {[f.w1Completed, f.w2Completed, f.w3Completed, f.w4Completed].map((c, i) => (
+                              <div key={i} style={{ width: 18, height: 18, borderRadius: 5, background: c ? 'rgba(5,150,105,0.12)' : 'rgba(0,0,0,0.05)', border: `1.5px solid ${c ? '#059669' : 'rgba(0,0,0,0.08)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: c ? '#059669' : '#CBD5E1' }}>
+                                {c ? '✓' : `W${i + 1}`}
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: pct === 100 ? '#059669' : pct >= 50 ? '#D97706' : '#DC2626', minWidth: 30, textAlign: 'right' }}>{pct}%</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Running Hours Widget */}
+            <div className="card overflow-hidden">
+              <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Gauge size={14} className="text-indigo-500" />
+                  <h3 className="text-sm font-semibold text-slate-800">Running Hours — Service Proximity</h3>
+                </div>
+                <span className="text-xs text-slate-400">{rhEquipments.length} tracked</span>
+              </div>
+              {rhEquipments.length === 0 ? (
+                <div className="py-10 text-center">
+                  <Gauge size={24} className="mx-auto mb-2 text-slate-200" />
+                  <p className="text-xs text-slate-400">No service thresholds set.</p>
+                  <p className="text-xs text-slate-300 mt-1">Go to Running Hours → Set Threshold to enable.</p>
+                </div>
+              ) : (
+                <div>
+                  {rhEquipments.map(eq => (
+                    <HoursBar
+                      key={eq.id}
+                      current={eq.currentHours}
+                      nextDue={eq.nextDueHours!}
+                      label={eq.name}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 12-Month Maintenance Analysis */}
+          <div className="card overflow-hidden">
+            <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart2 size={14} className="text-indigo-500" />
+                <h3 className="text-sm font-semibold text-slate-800">12-Month Maintenance Analysis</h3>
+              </div>
+              <div className="flex items-center gap-4 text-xs">
+                <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, borderRadius: 2, background: '#4f46e6', display: 'inline-block' }}></span>Jobs Due</span>
+                <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, borderRadius: 2, background: '#059669', display: 'inline-block' }}></span>Completed</span>
+                <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, borderRadius: 2, background: '#DC2626', display: 'inline-block' }}></span>Overdue</span>
+              </div>
+            </div>
+            <div style={{ padding: '20px 16px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 120 }}>
+                {monthlyData.map((m, i) => {
+                  const isCurrentMonth = i === 11;
+                  return (
+                    <div key={m.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <div style={{ width: '100%', display: 'flex', gap: 2, alignItems: 'flex-end', height: 100 }}>
+                        {[
+                          { val: m.due, color: '#4f46e6', opacity: isCurrentMonth ? 1 : 0.65 },
+                          { val: m.completed, color: '#059669', opacity: isCurrentMonth ? 1 : 0.65 },
+                          { val: m.overdue, color: '#DC2626', opacity: isCurrentMonth ? 1 : 0.65 },
+                        ].map((bar, j) => (
+                          <div key={j} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%' }}>
+                            {bar.val > 0 && (
+                              <div
+                                title={`${bar.val}`}
+                                style={{
+                                  width: '100%',
+                                  height: `${Math.max(4, Math.round((bar.val / maxBar) * 100))}%`,
+                                  borderRadius: '3px 3px 0 0',
+                                  background: bar.color,
+                                  opacity: bar.opacity,
+                                  transition: 'height 0.3s',
+                                  position: 'relative',
+                                }}
+                              >
+                                {bar.val > 0 && (
+                                  <span style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', fontSize: 9, fontWeight: 700, color: bar.color, whiteSpace: 'nowrap' }}>{bar.val}</span>
+                                )}
+                              </div>
+                            )}
+                            {bar.val === 0 && <div style={{ width: '100%', height: 2, background: 'rgba(0,0,0,0.04)', borderRadius: 99 }} />}
+                          </div>
+                        ))}
+                      </div>
+                      <span style={{ fontSize: 9, color: isCurrentMonth ? '#4f46e6' : '#94A3B8', fontWeight: isCurrentMonth ? 700 : 400, letterSpacing: '0.01em', marginTop: 4 }}>{m.label}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
