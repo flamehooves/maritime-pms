@@ -1,6 +1,7 @@
 import type {
   Vessel, Equipment, JobPlan, JobOrder, Defect, SparePart,
   EquipmentSpec, EquipmentSurvey, ConditionOfClass, EquipmentMemorandum, HseqRecord, CrmAttachment,
+  GuaranteeClaim, RunningHoursLog,
 } from '../types';
 
 const TOKEN_KEY      = 'pls_access_token';
@@ -839,4 +840,100 @@ export function getAttachmentDownloadUrl(module: string, recordId: string, attac
   const base = (localStorage.getItem('pls_api_domain') ?? 'https://www.zohoapis.in') + '/crm/v3';
   const token = localStorage.getItem('pls_access_token');
   return `${base}/${module}/${recordId}/Attachments/${attachmentId}?access_token=${token}`;
+}
+
+// ── Guarantee Claims ─────────────────────────────────────────────────────────
+
+
+const GC_FIELDS = ['Name','Equipment','Vessel','Vendor_Ref_Number','Claim_Date','Vendor_Name',
+  'Defect_Description','Claim_Amount','Linked_Defect_JO','Status','Resolution','Resolved_Date'];
+
+export async function fetchGuaranteeClaims(vesselId?: string): Promise<GuaranteeClaim[]> {
+  const rows = vesselId && vesselId !== '__all__'
+    ? await searchRecords('Guarantee_Claims', GC_FIELDS, `(Vessel:equals:${vesselId})`)
+    : await fetchAll('Guarantee_Claims', GC_FIELDS);
+  return (rows as Record<string, unknown>[]).map(r => ({
+    id: String(r.id),
+    name: String(r.Name ?? ''),
+    equipmentId: (r.Equipment as Record<string,unknown>)?.id as string,
+    equipmentName: (r.Equipment as Record<string,unknown>)?.name as string,
+    vesselId: (r.Vessel as Record<string,unknown>)?.id as string,
+    vesselName: (r.Vessel as Record<string,unknown>)?.name as string,
+    vendorRefNumber: String(r.Vendor_Ref_Number ?? ''),
+    claimDate: String(r.Claim_Date ?? ''),
+    vendorName: String(r.Vendor_Name ?? ''),
+    defectDescription: String(r.Defect_Description ?? ''),
+    claimAmount: Number(r.Claim_Amount ?? 0) || undefined,
+    linkedDefectJo: String(r.Linked_Defect_JO ?? ''),
+    status: String(r.Status ?? 'Open'),
+    resolution: String(r.Resolution ?? '') || undefined,
+    resolvedDate: String(r.Resolved_Date ?? '') || undefined,
+  }));
+}
+
+export async function createGuaranteeClaim(c: Partial<GuaranteeClaim>, vesselId?: string): Promise<string> {
+  return createRecord('Guarantee_Claims', {
+    Name: c.name || c.vendorRefNumber || 'GC-NEW',
+    Equipment: c.equipmentId ? { id: c.equipmentId } : undefined,
+    Vessel: vesselId ? { id: vesselId } : undefined,
+    Vendor_Ref_Number: c.vendorRefNumber || undefined,
+    Claim_Date: c.claimDate || undefined,
+    Vendor_Name: c.vendorName || undefined,
+    Defect_Description: c.defectDescription || undefined,
+    Claim_Amount: c.claimAmount || undefined,
+    Linked_Defect_JO: c.linkedDefectJo || undefined,
+    Status: c.status ?? 'Open',
+    Resolution: c.resolution || undefined,
+    Resolved_Date: c.resolvedDate || undefined,
+  });
+}
+
+export async function updateGuaranteeClaim(id: string, patch: Partial<GuaranteeClaim>): Promise<void> {
+  await updateRecord('Guarantee_Claims', id, {
+    Status: patch.status,
+    Resolution: patch.resolution || undefined,
+    Resolved_Date: patch.resolvedDate || undefined,
+    Vendor_Ref_Number: patch.vendorRefNumber || undefined,
+    Claim_Amount: patch.claimAmount || undefined,
+  });
+}
+
+export async function deleteGuaranteeClaim(id: string): Promise<void> {
+  return deleteRecord('Guarantee_Claims', id);
+}
+
+// ── Running Hours Log ────────────────────────────────────────────────────────
+
+const RHL_FIELDS = ['Name','Equipment','Vessel','Running_Hours_Reading','Log_Date',
+  'Reported_By','Hours_Since_Last','Log_Notes'];
+
+export async function fetchRunningHoursLog(vesselId?: string): Promise<RunningHoursLog[]> {
+  const rows = vesselId && vesselId !== '__all__'
+    ? await searchRecords('Running_Hours_Log', RHL_FIELDS, `(Vessel:equals:${vesselId})`)
+    : await fetchAll('Running_Hours_Log', RHL_FIELDS);
+  return (rows as Record<string, unknown>[]).map(r => ({
+    id: String(r.id),
+    name: String(r.Name ?? ''),
+    equipmentId: (r.Equipment as Record<string,unknown>)?.id as string,
+    equipmentName: (r.Equipment as Record<string,unknown>)?.name as string,
+    vesselId: (r.Vessel as Record<string,unknown>)?.id as string,
+    runningHoursReading: Number(r.Running_Hours_Reading ?? 0),
+    logDate: String(r.Log_Date ?? ''),
+    reportedBy: String(r.Reported_By ?? ''),
+    hoursSinceLast: Number(r.Hours_Since_Last ?? 0) || undefined,
+    notes: String(r.Log_Notes ?? '') || undefined,
+  }));
+}
+
+export async function createRunningHoursEntry(entry: Partial<RunningHoursLog>, vesselId?: string): Promise<string> {
+  return createRecord('Running_Hours_Log', {
+    Name: entry.name || `RHL-${Date.now()}`,
+    Equipment: entry.equipmentId ? { id: entry.equipmentId } : undefined,
+    Vessel: vesselId ? { id: vesselId } : undefined,
+    Running_Hours_Reading: entry.runningHoursReading,
+    Log_Date: entry.logDate || new Date().toISOString().split('T')[0],
+    Reported_By: entry.reportedBy || undefined,
+    Hours_Since_Last: entry.hoursSinceLast || undefined,
+    Log_Notes: entry.notes || undefined,
+  });
 }

@@ -139,6 +139,37 @@ export interface CrmAttachment {
   description?: string;
 }
 
+export interface GuaranteeClaim {
+  id: string;
+  name: string;
+  equipmentId?: string;
+  equipmentName?: string;
+  vesselId?: string;
+  vesselName?: string;
+  vendorRefNumber?: string;
+  claimDate?: string;
+  vendorName?: string;
+  defectDescription?: string;
+  claimAmount?: number;
+  linkedDefectJo?: string;
+  status: string;
+  resolution?: string;
+  resolvedDate?: string;
+}
+
+export interface RunningHoursLog {
+  id: string;
+  name: string;
+  equipmentId?: string;
+  equipmentName?: string;
+  vesselId?: string;
+  runningHoursReading: number;
+  logDate?: string;
+  reportedBy?: string;
+  hoursSinceLast?: number;
+  notes?: string;
+}
+
 export interface JobPlan {
   id: string;
   code: string;

@@ -18,6 +18,12 @@ import { DefectsPage } from './pages/Defects/DefectsPage';
 import { ApprovalsPage } from './pages/Approvals/ApprovalsPage';
 import { ReportsPage } from './pages/Reports/ReportsPage';
 import { SettingsPage } from './pages/Settings/SettingsPage';
+import { DueJobsPage } from './pages/DueJobs/DueJobsPage';
+import { RunningHoursPage } from './pages/RunningHours/RunningHoursPage';
+import { GuaranteeClaimsPage } from './pages/GuaranteeClaims/GuaranteeClaimsPage';
+import { TechnicalFormsPage } from './pages/TechnicalForms/TechnicalFormsPage';
+import { DynamicFormsPage } from './pages/DynamicForms/DynamicFormsPage';
+import { PmsAdminPage } from './pages/PmsAdmin/PmsAdminPage';
 
 function App() {
   return (
@@ -43,6 +49,12 @@ function App() {
               <Route path="approvals" element={<ApprovalsPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="due-jobs" element={<DueJobsPage />} />
+              <Route path="running-hours" element={<RunningHoursPage />} />
+              <Route path="guarantee-claims" element={<GuaranteeClaimsPage />} />
+              <Route path="technical-forms" element={<TechnicalFormsPage />} />
+              <Route path="dynamic-forms" element={<DynamicFormsPage />} />
+              <Route path="pms-admin" element={<PmsAdminPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

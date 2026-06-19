@@ -3,23 +3,34 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Ship, Cog, ClipboardList, Wrench, Package,
   AlertTriangle, CheckSquare, BarChart3, Settings, ChevronLeft,
-  ChevronRight, Anchor, LogOut, User, ChevronUp, Mail, Shield
+  ChevronRight, Anchor, LogOut, User, ChevronUp, Mail, Shield,
+  Clock, Gauge, FileText, LayoutTemplate, SlidersHorizontal
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import type { Role } from '../../types';
 
-const allNavItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
-  { path: '/vessels', label: 'Vessels', icon: Ship, roles: ['admin', 'chief_engineer'] as Role[] },
-  { path: '/equipment', label: 'Equipments', icon: Cog, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
-  { path: '/job-plans', label: 'Job Plans', icon: ClipboardList, roles: ['admin', 'chief_engineer'] as Role[] },
-  { path: '/job-orders', label: 'Job Orders', icon: Wrench, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
-  { path: '/spares', label: 'Spares', icon: Package, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
-  { path: '/defects', label: 'Defects', icon: AlertTriangle, roles: ['admin', 'chief_engineer', 'technician'] as Role[] },
-  { path: '/approvals', label: 'Approvals', icon: CheckSquare, roles: ['admin', 'chief_engineer'] as Role[] },
-  { path: '/reports', label: 'Reports', icon: BarChart3, roles: ['admin', 'chief_engineer'] as Role[] },
-  { path: '/settings', label: 'Settings', icon: Settings, roles: ['admin'] as Role[] },
+type NavItem = { path: string; label: string; icon: React.ElementType; roles: Role[]; section?: string };
+
+const allNavItems: NavItem[] = [
+  { path: '/',          label: 'Dashboard',        icon: LayoutDashboard,  roles: ['admin', 'chief_engineer', 'technician'] },
+  { path: '/vessels',   label: 'Vessels',           icon: Ship,             roles: ['admin', 'chief_engineer'] },
+  // MAINTENANCE section
+  { path: '/equipment',          label: 'Equipments',        icon: Cog,            roles: ['admin', 'chief_engineer', 'technician'], section: 'MAINTENANCE' },
+  { path: '/due-jobs',           label: 'Due Jobs',          icon: Clock,          roles: ['admin', 'chief_engineer', 'technician'] },
+  { path: '/job-orders',         label: 'Job Orders',        icon: Wrench,         roles: ['admin', 'chief_engineer', 'technician'] },
+  { path: '/running-hours',      label: 'Running Hours',     icon: Gauge,          roles: ['admin', 'chief_engineer', 'technician'] },
+  { path: '/technical-forms',    label: 'Technical Forms',   icon: FileText,       roles: ['admin', 'chief_engineer', 'technician'] },
+  { path: '/reports',            label: 'Reports',           icon: BarChart3,      roles: ['admin', 'chief_engineer'] },
+  { path: '/guarantee-claims',   label: 'Guarantee Claims',  icon: Shield,         roles: ['admin', 'chief_engineer'] },
+  { path: '/dynamic-forms',      label: 'Dynamic Forms',     icon: LayoutTemplate, roles: ['admin', 'chief_engineer'] },
+  { path: '/pms-admin',          label: 'PMS Administration',icon: SlidersHorizontal, roles: ['admin'] },
+  // Other
+  { path: '/job-plans',  label: 'Job Plans',  icon: ClipboardList, roles: ['admin', 'chief_engineer'], section: 'OTHER' },
+  { path: '/spares',     label: 'Spares',     icon: Package,       roles: ['admin', 'chief_engineer', 'technician'] },
+  { path: '/defects',    label: 'Defects',    icon: AlertTriangle, roles: ['admin', 'chief_engineer', 'technician'] },
+  { path: '/approvals',  label: 'Approvals',  icon: CheckSquare,   roles: ['admin', 'chief_engineer'] },
+  { path: '/settings',   label: 'Settings',   icon: Settings,      roles: ['admin'] },
 ];
 
 const roleLabels: Record<Role, { label: string; color: string }> = {
@@ -89,28 +100,35 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-2 py-3 overflow-y-auto">
         <div className="space-y-0.5">
-          {visibleItems.map((item) => {
+          {visibleItems.map((item, idx) => {
             const isActive = item.path === '/'
               ? location.pathname === '/'
               : location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+            const showSectionLabel = !sidebarCollapsed && item.section;
             return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                title={sidebarCollapsed ? item.label : undefined}
-                className={() =>
-                  `flex items-center gap-3 px-2.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 ${
-                    isActive ? 'text-white' : 'text-gray-400 hover:text-gray-200'
-                  }`
-                }
-                style={({ isActive: active }) => active
-                  ? { background: 'rgba(255,255,255,0.10)', backdropFilter: 'blur(8px)' }
-                  : {}
-                }
-              >
-                <item.icon size={16} className="flex-shrink-0" />
-                {!sidebarCollapsed && <span>{item.label}</span>}
-              </NavLink>
+              <React.Fragment key={item.path}>
+                {showSectionLabel && (
+                  <div style={{ padding: idx === 0 ? '8px 10px 4px' : '16px 10px 4px', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                    {item.section}
+                  </div>
+                )}
+                <NavLink
+                  to={item.path}
+                  title={sidebarCollapsed ? item.label : undefined}
+                  className={() =>
+                    `flex items-center gap-3 px-2.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 ${
+                      isActive ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+                    }`
+                  }
+                  style={({ isActive: active }) => active
+                    ? { background: 'rgba(255,255,255,0.10)', backdropFilter: 'blur(8px)' }
+                    : {}
+                  }
+                >
+                  <item.icon size={16} className="flex-shrink-0" />
+                  {!sidebarCollapsed && <span>{item.label}</span>}
+                </NavLink>
+              </React.Fragment>
             );
           })}
         </div>
