@@ -1,17 +1,63 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { Ship, Wrench, AlertCircle, CheckSquare, Anchor, Loader } from 'lucide-react';
+import { Ship, Wrench, AlertCircle, CheckSquare, Anchor, Loader, MapPin } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { PriorityBadge } from '../../components/ui/StatusBadge';
 import { useCrmFetch } from '../../hooks/useCrmFetch';
-import { fetchVessels, fetchJobOrdersForApproval, fetchJobOrders, fetchDefects, approveJobOrder } from '../../services/crmService';
+import { fetchVessels, fetchJobOrdersForApproval, fetchJobOrders, fetchDefects, approveJobOrder, updateVesselPosition } from '../../services/crmService';
 import { useApp } from '../../context/AppContext';
 import type { Vessel } from '../../types';
-// NOTE: all dashboard data sourced from Zoho CRM
+
+// Fix Leaflet default icon paths broken by bundlers
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+const DEMO_POSITIONS: Record<string, { lat: number; lng: number; mmsi: string }> = {
+  'AURORA PRINCESS':  { lat: 18.3,   lng: -66.1,  mmsi: '311000123' },
+  'MAHAKALI':         { lat: 1.25,   lng: 103.82, mmsi: '352001456' },
+  'SEALION SPIRIT':   { lat: 13.5,   lng: 115.2,  mmsi: '538003789' },
+  'PACIFIC TRADER':   { lat: -9.1,   lng: 79.4,   mmsi: '564004012' },
+  'NORTHERN STAR':    { lat: 56.0,   lng: 4.2,    mmsi: '311005345' },
+  'OCEAN PRIDE':      { lat: 29.2,   lng: 126.1,  mmsi: '477006678' },
+  'ATLAS VOYAGER':    { lat: 36.4,   lng: 22.1,   mmsi: '239007901' },
+  'MERIDIAN QUEEN':   { lat: 13.1,   lng: 65.3,   mmsi: '636008234' },
+};
+
+function vesselIcon(status?: string) {
+  const color = status === 'at_sea' ? '#4f46e6'
+    : status === 'in_port' ? '#059669'
+    : status === 'in_maintenance' ? '#D97706'
+    : '#6B7280';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="24" height="32">
+    <path d="M12 1 C12 1 3 13 3 18 C3 23.5 7 28 12 28 C17 28 21 23.5 21 18 C21 13 12 1 12 1Z" fill="${color}" stroke="white" stroke-width="1.5"/>
+    <circle cx="12" cy="17" r="3" fill="white" opacity="0.9"/>
+  </svg>`;
+  return L.divIcon({ html: svg, className: '', iconSize: [24, 32], iconAnchor: [12, 30], popupAnchor: [0, -30] });
+}
+
+function FitBounds({ vessels }: { vessels: Vessel[] }) {
+  const map = useMap();
+  const fitted = useRef(false);
+  useEffect(() => {
+    const pts = vessels.filter(v => v.latitude != null && v.longitude != null);
+    if (pts.length > 0 && !fitted.current) {
+      map.fitBounds(L.latLngBounds(pts.map(v => [v.latitude!, v.longitude!] as [number, number])), { padding: [30, 30], maxZoom: 5 });
+      fitted.current = true;
+    }
+  }, [vessels, map]);
+  return null;
+}
 
 const P = 'https://images.pexels.com/photos';
 const Q = '?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop';
@@ -49,43 +95,6 @@ function getVesselStatusDot(vs: string | undefined): { color: string; label: str
   }
 }
 
-// Fleet Map — uses CRM vessel position data overlaid on world map
-function FleetMap({ vessels }: { vessels: (Vessel & { mapPosition?: { x: number; y: number } })[] }) {
-  const mapVessels = vessels.filter(v => v.mapPosition);
-  return (
-    <div className="relative w-full" style={{ height: '320px', background: '#EEF6FC', overflow: 'hidden', borderRadius: 12 }}>
-      <img src="/maritime-pms/world-map.png" alt="" aria-hidden="true"
-        style={{ filter: 'brightness(0) saturate(100%) invert(55%) sepia(60%) saturate(400%) hue-rotate(165deg) brightness(0.95)', width: '100%', height: '100%', objectFit: 'fill', position: 'absolute', inset: 0, opacity: 0.85 }} />
-      <style>{`
-        @keyframes vesselPing { 0% { transform: translate(-50%,-50%) scale(1); opacity:.6; } 100% { transform: translate(-50%,-50%) scale(3); opacity:0; } }
-        .vessel-dot-group:hover .vessel-tooltip { display: block; }
-        .vessel-tooltip { display: none; }
-      `}</style>
-      {mapVessels.map(v => {
-        const { color } = getVesselStatusDot(v.vesselStatus);
-        const isActive = v.vesselStatus === 'at_sea';
-        return (
-          <div key={v.id} className="vessel-dot-group" style={{ position: 'absolute', left: `${v.mapPosition!.x}%`, top: `${v.mapPosition!.y}%`, zIndex: 10, cursor: 'pointer' }}>
-            {isActive && <div style={{ position: 'absolute', width: 20, height: 20, borderRadius: '50%', background: color, opacity: 0, transform: 'translate(-50%,-50%)', animation: 'vesselPing 2s ease-out infinite' }} />}
-            <div style={{ position: 'absolute', width: 11, height: 11, borderRadius: '50%', background: color, border: '2px solid rgba(255,255,255,0.95)', transform: 'translate(-50%,-50%)', boxShadow: `0 0 8px ${color}cc, 0 1px 3px rgba(0,0,0,0.2)` }} />
-            <div className="vessel-tooltip" style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', color: '#1C1C1E', fontSize: 11, fontWeight: 600, padding: '5px 10px', borderRadius: 8, whiteSpace: 'nowrap', border: `1px solid rgba(255,255,255,0.8)`, boxShadow: `0 4px 12px rgba(0,0,0,0.12), 0 0 0 1px ${color}40`, pointerEvents: 'none' }}>
-              {v.name}
-              <div style={{ color: '#6B7280', fontWeight: 400, fontSize: 10 }}>{v.vesselStatus === 'at_sea' ? '⚓ At Sea' : v.vesselStatus === 'in_port' ? '🏁 In Port' : v.vesselStatus === 'in_maintenance' ? '🔧 Maintenance' : '🞊 Drydock'}</div>
-            </div>
-          </div>
-        );
-      })}
-      <div style={{ position: 'absolute', bottom: 10, left: 10, display: 'flex', gap: 8, alignItems: 'center', zIndex: 10, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', borderRadius: 20, padding: '4px 10px', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        {[{ color: '#3b82f6', label: 'At Sea' }, { color: '#22c55e', label: 'In Port' }, { color: '#f59e0b', label: 'Maintenance' }, { color: '#94a3b8', label: 'Drydock' }].map(item => (
-          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color, boxShadow: `0 0 4px ${item.color}` }} />
-            <span style={{ color: '#374151', fontSize: 10, fontWeight: 500 }}>{item.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function vesselHealthScore(vesselName: string, allDefects: import('../../types').Defect[]): number {
   const vesselDefects = allDefects.filter(d => d.vessel === vesselName && d.status !== 'Closed' && d.status !== 'Resolved');
@@ -175,7 +184,7 @@ export function AdminDashboard() {
   const navigate = useNavigate();
   const { currentVesselId } = useApp();
 
-  const { data: vessels, loading: loadingVessels } = useCrmFetch(fetchVessels);
+  const { data: vessels, loading: loadingVessels, reload: reloadVessels } = useCrmFetch(fetchVessels);
   const { data: approvals, loading: loadingApprovals, reload: reloadApprovals } = useCrmFetch(fetchJobOrdersForApproval);
   const { data: allJobOrders, loading: loadingJobs } = useCrmFetch(() => fetchJobOrders(currentVesselId), [currentVesselId]);
   const { data: allDefects, loading: loadingDefects } = useCrmFetch(() => fetchDefects(currentVesselId), [currentVesselId]);
@@ -242,6 +251,26 @@ export function AdminDashboard() {
       .sort((a, b) => b.critical - a.critical || b.total - a.total);
   })();
 
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState<string | null>(null);
+  const positioned = vessels.filter(v => v.latitude != null && v.longitude != null);
+
+  async function handleSeedPositions() {
+    setSeeding(true); setSeedMsg(null);
+    let count = 0;
+    try {
+      for (const v of vessels) {
+        const key = v.name.toUpperCase();
+        const demo = DEMO_POSITIONS[v.name] ?? Object.entries(DEMO_POSITIONS).find(([k]) => key.includes(k))?.[1];
+        if (!demo || (v.latitude != null && v.longitude != null)) continue;
+        await updateVesselPosition(v.id, demo.lat, demo.lng, demo.mmsi);
+        count++;
+      }
+      setSeedMsg(`Seeded ${count} position${count !== 1 ? 's' : ''}`);
+      reloadVessels();
+    } catch (e) { setSeedMsg('Error seeding'); } finally { setSeeding(false); }
+  }
+
   async function handleApprove(id: string) {
     await approveJobOrder(id);
     reloadApprovals();
@@ -278,14 +307,47 @@ export function AdminDashboard() {
           <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
             <div>
               <div style={{ color: '#1C1C1E', fontWeight: 600, fontSize: 14 }}>Fleet Map</div>
-              <div style={{ color: '#94A3B8', fontSize: 12 }}>{vessels.length} vessels tracked globally</div>
+              <div style={{ color: '#94A3B8', fontSize: 12 }}>{positioned.length} of {vessels.length} vessels positioned</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#22c55e', fontWeight: 500 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
-              Live tracking
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {seedMsg && <span style={{ fontSize: 11, color: '#059669', fontWeight: 600 }}>{seedMsg}</span>}
+              {positioned.length === 0 && !loadingVessels && (
+                <button onClick={handleSeedPositions} disabled={seeding} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#4f46e6', background: 'rgba(79,70,230,0.08)', border: '1px solid rgba(79,70,230,0.2)', borderRadius: 8, padding: '4px 10px', cursor: 'pointer' }}>
+                  {seeding ? <Loader size={11} className="animate-spin" /> : <MapPin size={11} />}
+                  Seed Positions
+                </button>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#22c55e', fontWeight: 500 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
+                Live
+              </div>
             </div>
           </div>
-          <FleetMap vessels={vessels} />
+          {/* Fixed-size Leaflet map */}
+          <div style={{ height: 320, width: '100%' }}>
+            <MapContainer center={[20, 60]} zoom={2} style={{ height: '100%', width: '100%' }} zoomControl={true} scrollWheelZoom={false}>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <FitBounds vessels={vessels} />
+              {vessels.filter(v => v.latitude != null && v.longitude != null).map(v => (
+                <Marker key={v.id} position={[v.latitude!, v.longitude!]} icon={vesselIcon(v.vesselStatus)}>
+                  <Popup>
+                    <div style={{ minWidth: 160 }}>
+                      <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{v.name}</div>
+                      <div style={{ fontSize: 11, color: '#64748B' }}>{v.type} · {v.flag}</div>
+                      <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>IMO {v.imo}</div>
+                      {v.mmsi && <div style={{ fontSize: 11, color: '#64748B' }}>MMSI {v.mmsi}</div>}
+                      <div style={{ marginTop: 4, fontSize: 11, fontWeight: 600, color: v.vesselStatus === 'at_sea' ? '#4f46e6' : v.vesselStatus === 'in_port' ? '#059669' : '#D97706' }}>
+                        {v.vesselStatus === 'at_sea' ? 'At Sea' : v.vesselStatus === 'in_port' ? 'In Port' : v.vesselStatus === 'in_maintenance' ? 'In Maintenance' : 'Drydock'}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
         </div>
         <div style={{ ...glass, padding: 20 }}>
           <HealthGauge vessels={vessels} allDefects={allDefects} />
