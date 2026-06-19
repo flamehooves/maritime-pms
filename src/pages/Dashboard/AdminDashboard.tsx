@@ -9,30 +9,8 @@ import { useCrmFetch } from '../../hooks/useCrmFetch';
 import { fetchVessels, fetchJobOrdersForApproval, fetchJobOrders, fetchDefects, approveJobOrder } from '../../services/crmService';
 import { useApp } from '../../context/AppContext';
 import type { Vessel } from '../../types';
-// NOTE: staticVessels removed — all vessel data now from Zoho CRM
+// NOTE: all dashboard data sourced from Zoho CRM
 
-const fuelData = [
-  { month: 'Jan', fuel: 4200 },
-  { month: 'Feb', fuel: 3800 },
-  { month: 'Mar', fuel: 4600 },
-  { month: 'Apr', fuel: 4100 },
-  { month: 'May', fuel: 3900 },
-  { month: 'Jun', fuel: 4400 },
-];
-
-const vesselHealthScores: Record<string, number> = {
-  'MAHAKALI': 76, 'SEALION SPIRIT': 94, 'PACIFIC TRADER': 78,
-  'NORTHERN STAR': 97, 'OCEAN PRIDE': 89, 'ATLAS VOYAGER': 91,
-};
-
-const heatmapData = [
-  { vessel: 'MAHAKALI', days: [80, 60, 90, 40, 70, 85, 50] },
-  { vessel: 'SEALION SPIRIT', days: [95, 90, 88, 92, 94, 96, 89] },
-  { vessel: 'PACIFIC TRADER', days: [60, 70, 50, 65, 55, 75, 60] },
-  { vessel: 'NORTHERN STAR', days: [98, 95, 97, 96, 99, 94, 97] },
-  { vessel: 'OCEAN PRIDE', days: [85, 88, 82, 90, 87, 83, 91] },
-  { vessel: 'ATLAS VOYAGER', days: [92, 88, 94, 86, 90, 93, 88] },
-];
 const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 const P = 'https://images.pexels.com/photos';
@@ -109,34 +87,45 @@ function FleetMap({ vessels }: { vessels: (Vessel & { mapPosition?: { x: number;
   );
 }
 
-function HealthGauge({ score }: { score: number }) {
+function vesselHealthScore(vesselName: string, allDefects: import('../../types').Defect[]): number {
+  const vesselDefects = allDefects.filter(d => d.vessel === vesselName && d.status !== 'Closed' && d.status !== 'Resolved');
+  const critical = vesselDefects.filter(d => d.severity === 'Critical').length;
+  const high = vesselDefects.filter(d => d.severity === 'High').length;
+  const score = Math.max(0, 100 - critical * 15 - high * 8 - (vesselDefects.length - critical - high) * 3);
+  return Math.min(100, score);
+}
+
+function HealthGauge({ vessels, allDefects }: { vessels: Vessel[]; allDefects: import('../../types').Defect[] }) {
+  const scores = vessels.slice(0, 6).map(v => ({ name: v.name, score: vesselHealthScore(v.name, allDefects) }));
+  const avg = scores.length > 0 ? Math.round(scores.reduce((s, v) => s + v.score, 0) / scores.length) : 0;
   const radius = 60;
   const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference - (score / 100) * circumference;
-  const healthVessels = Object.entries(vesselHealthScores).slice(0, 6);
+  const dashOffset = circumference - (avg / 100) * circumference;
+  const gaugeColor = avg >= 90 ? '#34C759' : avg >= 75 ? '#FF9F0A' : '#FF453A';
   return (
     <div className="flex flex-col items-center h-full">
       <div className="relative flex items-center justify-center" style={{ width: 160, height: 160 }}>
         <svg width="160" height="160" style={{ transform: 'rotate(-90deg)' }}>
           <circle cx="80" cy="80" r={radius} fill="none" stroke="#F3F4F6" strokeWidth="12" />
-          <circle cx="80" cy="80" r={radius} fill="none" stroke="#34C759" strokeWidth="12" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset} style={{ transition: 'stroke-dashoffset 1s ease' }} />
+          <circle cx="80" cy="80" r={radius} fill="none" stroke={gaugeColor} strokeWidth="12" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset} style={{ transition: 'stroke-dashoffset 1s ease' }} />
         </svg>
         <div className="absolute text-center">
-          <div className="text-3xl font-bold text-slate-900">{score}</div>
+          <div className="text-3xl font-bold text-slate-900">{avg}</div>
           <div className="text-xs text-slate-500">/ 100</div>
         </div>
       </div>
       <div className="text-sm font-semibold text-slate-700 mb-3">Fleet Health Score</div>
       <div className="w-full space-y-2 px-2">
-        {healthVessels.map(([name, s]) => (
+        {scores.map(({ name, score: s }) => (
           <div key={name} className="flex items-center gap-2">
             <span className="text-xs text-slate-500 truncate" style={{ width: '90px', flexShrink: 0 }}>{name.split(' ')[0]}</span>
             <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full rounded-full" style={{ width: `${s}%`, background: s >= 90 ? '#34C759' : s >= 80 ? '#FF9F0A' : '#FF453A' }} />
+              <div className="h-full rounded-full" style={{ width: `${s}%`, background: s >= 90 ? '#34C759' : s >= 75 ? '#FF9F0A' : '#FF453A' }} />
             </div>
             <span className="text-xs font-semibold text-slate-700" style={{ width: '28px', textAlign: 'right' }}>{s}</span>
           </div>
         ))}
+        {scores.length === 0 && <div className="text-xs text-slate-400 text-center">No vessel data</div>}
       </div>
     </div>
   );
@@ -203,6 +192,56 @@ export function AdminDashboard() {
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
     .slice(0, 5);
 
+  // Jobs completed per month (last 6 months) — from CRM
+  const jobsByMonth = (() => {
+    const months: { month: string; count: number }[] = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleDateString('en-GB', { month: 'short' });
+      const count = allJobOrders.filter(jo => {
+        if (jo.status !== 'Completed' && jo.status !== 'Approved') return false;
+        const cd = jo.completionDate ? new Date(jo.completionDate) : null;
+        return cd && cd.getMonth() === d.getMonth() && cd.getFullYear() === d.getFullYear();
+      }).length;
+      months.push({ month: label, count });
+    }
+    return months;
+  })();
+
+  // Heatmap: jobs completed per vessel per day for last 7 days
+  const maintenanceHeatmap = (() => {
+    const now = new Date();
+    const vesselNames = [...new Set(allJobOrders.map(jo => jo.vessel).filter(Boolean))].slice(0, 6);
+    return vesselNames.map(vessel => {
+      const days = Array.from({ length: 7 }, (_, i) => {
+        const day = new Date(now);
+        day.setDate(now.getDate() - (6 - i));
+        return allJobOrders.filter(jo => {
+          if ((jo.status !== 'Completed' && jo.status !== 'Approved') || jo.vessel !== vessel) return false;
+          const cd = jo.completionDate ? new Date(jo.completionDate) : null;
+          return cd && cd.toDateString() === day.toDateString();
+        }).length;
+      });
+      return { vessel, days };
+    });
+  })();
+
+  // Open defects grouped by vessel
+  const defectsByVessel = (() => {
+    const openDefs = allDefects.filter(d => d.status !== 'Closed' && d.status !== 'Resolved');
+    const byVessel: Record<string, { total: number; critical: number; high: number }> = {};
+    for (const d of openDefs) {
+      const v = d.vessel || 'Unknown';
+      if (!byVessel[v]) byVessel[v] = { total: 0, critical: 0, high: 0 };
+      byVessel[v].total++;
+      if (d.severity === 'Critical') byVessel[v].critical++;
+      if (d.severity === 'High') byVessel[v].high++;
+    }
+    return Object.entries(byVessel).map(([vessel, counts]) => ({ vessel, ...counts }))
+      .sort((a, b) => b.critical - a.critical || b.total - a.total);
+  })();
+
   async function handleApprove(id: string) {
     await approveJobOrder(id);
     reloadApprovals();
@@ -249,54 +288,58 @@ export function AdminDashboard() {
           <FleetMap vessels={vessels} />
         </div>
         <div style={{ ...glass, padding: 20 }}>
-          <HealthGauge score={81} />
+          <HealthGauge vessels={vessels} allDefects={allDefects} />
         </div>
       </div>
 
-      {/* Row 3: Fuel Chart | Maintenance Heatmap | Crew Readiness */}
+      {/* Row 3: Jobs Completed Chart | Maintenance Heatmap | Defects by Vessel */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 20 }}>
         <div style={{ ...glass, padding: 18 }}>
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">Fuel Consumption</h3>
-          <p className="text-xs text-slate-500 mb-3">Fleet total (MT) · Jan–Jun 2025</p>
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Jobs Completed</h3>
+          <p className="text-xs text-slate-500 mb-3">Last 6 months · fleet-wide</p>
           <div style={{ height: 160 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={fuelData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+              <AreaChart data={jobsByMonth} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="fuelGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  <linearGradient id="jobsGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#4f46e6" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#4f46e6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                 <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9CA3AF' }} />
                 <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} />
-                <Tooltip formatter={(v) => [`${v} MT`, 'Fuel']} contentStyle={{ fontSize: 11, border: 'none', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }} />
-                <Area type="monotone" dataKey="fuel" stroke="#3b82f6" strokeWidth={2} fill="url(#fuelGrad)" />
+                <Tooltip formatter={(v) => [`${v}`, 'Completed']} contentStyle={{ fontSize: 11, border: 'none', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }} />
+                <Area type="monotone" dataKey="count" stroke="#4f46e6" strokeWidth={2} fill="url(#jobsGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div style={{ ...glass, padding: 18 }}>
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">Maintenance Activity</h3>
-          <p className="text-xs text-slate-500 mb-3">Completion rate by vessel × day</p>
-          <div className="space-y-1.5">
-            <div className="flex gap-1 mb-1">
-              <span className="text-xs text-slate-400" style={{ width: '90px', flexShrink: 0 }} />
-              {weekDays.map((d, i) => <span key={i} className="text-xs text-slate-400 text-center" style={{ width: '24px', flexShrink: 0 }}>{d}</span>)}
-            </div>
-            {heatmapData.map(row => (
-              <div key={row.vessel} className="flex items-center gap-1">
-                <span className="text-xs text-slate-500 truncate" style={{ width: '90px', flexShrink: 0 }}>{row.vessel.split(' ')[0]}</span>
-                {row.days.map((val, i) => (
-                  <div key={i} title={`${row.vessel} · ${weekDays[i]} · ${val}%`} className="rounded"
-                    style={{ width: '24px', height: '20px', flexShrink: 0, background: getHeatmapColor(val), opacity: 0.6 + (val / 100) * 0.4 }} />
-                ))}
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Maintenance Heatmap</h3>
+          <p className="text-xs text-slate-500 mb-3">Jobs completed per vessel · last 7 days</p>
+          {maintenanceHeatmap.length === 0 ? (
+            <div className="flex items-center justify-center h-24 text-xs text-slate-400">No completion data yet.</div>
+          ) : (
+            <div className="space-y-1.5">
+              <div className="flex gap-1 mb-1">
+                <span className="text-xs text-slate-400" style={{ width: '80px', flexShrink: 0 }} />
+                {weekDays.map((d, i) => <span key={i} className="text-xs text-slate-400 text-center" style={{ width: '24px', flexShrink: 0 }}>{d}</span>)}
               </div>
-            ))}
-          </div>
+              {maintenanceHeatmap.map(row => (
+                <div key={row.vessel} className="flex items-center gap-1">
+                  <span className="text-xs text-slate-500 truncate" style={{ width: '80px', flexShrink: 0 }}>{row.vessel.split(' ')[0]}</span>
+                  {row.days.map((val, i) => {
+                    const color = val > 3 ? '#34C759' : val > 0 ? '#FF9F0A' : '#E5E7EB';
+                    return <div key={i} title={`${row.vessel} · ${val} jobs`} className="rounded" style={{ width: '24px', height: '20px', flexShrink: 0, background: color, opacity: val > 0 ? 1 : 0.4 }} />;
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex items-center gap-3 mt-3">
-            {[['#34C759', '≥90%'], ['#FF9F0A', '75–89%'], ['#FF453A', '<75%']].map(([c, l]) => (
+            {[['#34C759', '>3 jobs'], ['#FF9F0A', '1–3'], ['#E5E7EB', 'None']].map(([c, l]) => (
               <div key={l} className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-sm" style={{ background: c }} />
                 <span className="text-xs text-slate-400">{l}</span>
@@ -306,18 +349,18 @@ export function AdminDashboard() {
         </div>
 
         <div style={{ ...glass, padding: 18 }}>
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">Crew Readiness</h3>
-          <p className="text-xs text-slate-500 mb-4">Fleet-wide crew status overview</p>
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Open Defects by Vessel</h3>
+          <p className="text-xs text-slate-500 mb-4">Count of unresolved defects per vessel</p>
           <div className="space-y-3">
-            {[
-              { label: 'Active Crew', value: 248, color: '#16a34a' },
-              { label: 'Expiring Certs', value: 14, color: '#d97706' },
-              { label: 'Crew Changes', value: 7, color: '#3b82f6' },
-              { label: 'Off-signers Due', value: 23, color: '#7c3aed' },
-            ].map(item => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.7)' }}>
-                <span style={{ fontSize: 13, fontWeight: 500, color: '#334155' }}>{item.label}</span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: item.color }}>{item.value}</span>
+            {defectsByVessel.length === 0 ? (
+              <div className="text-xs text-slate-400 text-center py-4">No open defects. 🎉</div>
+            ) : defectsByVessel.map(item => (
+              <div key={item.vessel} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 500, color: '#334155', width: 90, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.vessel.split(' ')[0]}</span>
+                <div style={{ flex: 1, height: 6, borderRadius: 99, background: '#F3F4F6', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 99, background: item.critical > 0 ? '#FF453A' : item.high > 0 ? '#FF9F0A' : '#94A3B8', width: `${Math.min(100, (item.total / Math.max(...defectsByVessel.map(d => d.total))) * 100)}%` }} />
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 800, color: item.critical > 0 ? '#DC2626' : '#374151', width: 20, textAlign: 'right', flexShrink: 0 }}>{item.total}</span>
               </div>
             ))}
           </div>
