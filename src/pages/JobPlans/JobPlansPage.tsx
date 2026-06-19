@@ -3,7 +3,7 @@ import { Plus, Search, Loader, AlertCircle, Pencil, Trash2, X, Play } from 'luci
 import { useApp } from '../../context/AppContext';
 import { useCrmFetch } from '../../hooks/useCrmFetch';
 import {
-  fetchJobPlans, createJobPlan, updateJobPlan, deleteJobPlan, createJobOrder,
+  fetchJobPlans, createJobPlan, updateJobPlan, deleteJobPlan, createJobOrder, FREQ_OPTIONS, FREQ_TO_DAYS,
 } from '../../services/crmService';
 import type { JobPlan } from '../../types';
 
@@ -129,11 +129,13 @@ export function JobPlansPage() {
             <Field label="Plan Code">
               <input className={inp} value={form.code ?? ''} onChange={set('code')} placeholder="JP-ME-001" />
             </Field>
-            <Field label="Frequency (days) *">
-              <input className={inp} type="number" min={1} value={form.interval ?? 90} onChange={e => {
-                const interval = Number(e.target.value);
+            <Field label="Frequency *">
+              <select className={inp} value={Object.entries(FREQ_TO_DAYS).find(([, d]) => d === form.interval)?.[0] ?? 'Quarterly'} onChange={e => {
+                const interval = FREQ_TO_DAYS[e.target.value] ?? 90;
                 setForm(f => ({ ...f, interval, nextDue: autoNextDue(f.lastDone ?? '', interval) }));
-              }} />
+              }}>
+                {FREQ_OPTIONS.map(o => <option key={o}>{o}</option>)}
+              </select>
             </Field>
           </div>
           <Field label="Plan Title *">

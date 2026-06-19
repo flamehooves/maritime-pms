@@ -1,4 +1,7 @@
-import type { Vessel, Equipment, JobPlan, JobOrder, Defect, SparePart } from '../types';
+import type {
+  Vessel, Equipment, JobPlan, JobOrder, Defect, SparePart,
+  EquipmentSpec, EquipmentSurvey, ConditionOfClass, EquipmentMemorandum, HseqRecord, CrmAttachment,
+} from '../types';
 
 const TOKEN_KEY      = 'pls_access_token';
 const API_DOMAIN_KEY = 'pls_api_domain';
@@ -169,17 +172,24 @@ export async function deleteVessel(id: string): Promise<void> {
 
 // ── Equipments ─────────────────────────────────────────────────────────────
 
-const EQ_FIELDS = ['Name', 'Equipment_Name', 'Vessel', 'System', 'Equipment_Type', 'Maker',
-  'Model', 'Serial_Number', 'Equipment_Status', 'Criticality', 'Install_Date',
+const EQ_FIELDS = [
+  'Name', 'Equipment_Name', 'Vessel', 'System', 'Equipment_Type', 'Maker', 'Model',
+  'Serial_Number', 'Equipment_Status', 'Criticality', 'Install_Date',
   'Last_Maintenance_Date', 'Next_Due_Date', 'Location_On_Vessel', 'Responsible_Rank',
-  'Parent_Equipment'];
+  'Parent_Equipment',
+  'Class_Reference', 'Safety_Level', 'Builder_Licence', 'Drawing_Number', 'Department',
+  'Class_Name', 'Preferred_Vendor', 'Running_Hours', 'ID_Number', 'Part_Number', 'IMO_Tier',
+  'Equipment_Dimension', 'Equipment_Material',
+  'Is_Alarm', 'Is_Main_Engine', 'Is_Circulating', 'Mount_Allowed', 'RHRS_Separately', 'MD_Required',
+];
 
-function mapEquipment(r: Record<string, unknown>): Equipment & { vesselId?: string } {
+function mapEquipment(r: Record<string, unknown>): Equipment {
   const vessel = r.Vessel as Record<string, unknown> | null;
   const parent = r.Parent_Equipment as Record<string, unknown> | null;
   return {
     id: String(r.id),
-    code: String(r.Name ?? ''),
+    crmCode: String(r.Name ?? ''),
+    code: String(r.Name ?? ''),      // will be overwritten with hierarchy code in buildEquipmentTree
     name: String((r.Equipment_Name as string) ?? r.Name ?? ''),
     system: String(r.System ?? ''),
     type: String(r.Equipment_Type ?? ''),
@@ -193,10 +203,29 @@ function mapEquipment(r: Record<string, unknown>): Equipment & { vesselId?: stri
     nextDue: String(r.Next_Due_Date ?? ''),
     location: String(r.Location_On_Vessel ?? ''),
     responsibleRank: String(r.Responsible_Rank ?? ''),
-    // parentId = parent equipment ID for hierarchy; vesselId used for vessel filtering
     parentId: parent ? String(parent.id) : undefined,
     parentName: parent ? String(parent.name) : undefined,
     vesselId: vessel ? String(vessel.id) : undefined,
+    // Extended fields
+    classRef: String(r.Class_Reference ?? ''),
+    safetyLevel: String(r.Safety_Level ?? ''),
+    builderLicence: String(r.Builder_Licence ?? ''),
+    drawingNumber: String(r.Drawing_Number ?? ''),
+    department: String(r.Department ?? ''),
+    className: String(r.Class_Name ?? ''),
+    preferredVendor: String(r.Preferred_Vendor ?? ''),
+    runningHours: r.Running_Hours != null ? Number(r.Running_Hours) : undefined,
+    idNumber: String(r.ID_Number ?? ''),
+    partNumber: String(r.Part_Number ?? ''),
+    imoTier: String(r.IMO_Tier ?? ''),
+    equipmentDimension: String(r.Equipment_Dimension ?? ''),
+    equipmentMaterial: String(r.Equipment_Material ?? ''),
+    isAlarm: r.Is_Alarm === true,
+    isMainEngine: r.Is_Main_Engine === true,
+    isCirculating: r.Is_Circulating === true,
+    mountAllowed: r.Mount_Allowed === true,
+    rhrsSeparately: r.RHRS_Separately === true,
+    mdRequired: r.MD_Required === true,
   };
 }
 
@@ -240,12 +269,32 @@ export async function deleteEquipment(id: string): Promise<void> {
 
 // ── Job Plans ──────────────────────────────────────────────────────────────
 
+export const FREQ_OPTIONS = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Half Yearly', 'Annual', '2 Years', '5 Years'] as const;
+export type FreqOption = typeof FREQ_OPTIONS[number];
+
+export const FREQ_TO_DAYS: Record<string, number> = {
+  'Daily': 1, 'Weekly': 7, 'Monthly': 30, 'Quarterly': 90,
+  'Half Yearly': 180, 'Annual': 365, '2 Years': 730, '5 Years': 1825,
+};
+
+function daysToFreq(days: number): string {
+  const entries = Object.entries(FREQ_TO_DAYS).sort((a, b) => a[1] - b[1]);
+  let best = entries[0][0];
+  let bestDiff = Math.abs(days - entries[0][1]);
+  for (const [label, d] of entries) {
+    const diff = Math.abs(days - d);
+    if (diff < bestDiff) { bestDiff = diff; best = label; }
+  }
+  return best;
+}
+
 const JP_FIELDS = ['Name', 'Plan_Code', 'Equipment', 'Vessel', 'Maintenance_Category',
   'Frequency', 'Estimated_Hours', 'Priority', 'Description',
   'Last_Executed', 'Next_Due_Date', 'Assigned_Rank'];
 
 function mapJobPlan(r: Record<string, unknown>): JobPlan {
   const eq = r.Equipment as Record<string, unknown> | null;
+  const freqStr = String(r.Frequency ?? '');
   return {
     id: String(r.id),
     code: String(r.Plan_Code ?? r.Name ?? ''),
@@ -254,7 +303,7 @@ function mapJobPlan(r: Record<string, unknown>): JobPlan {
     equipmentName: eq ? String(eq.name) : '',
     system: '',
     frequencyType: 'Calendar',
-    interval: Number(r.Frequency ?? 0),
+    interval: FREQ_TO_DAYS[freqStr] ?? 90,
     intervalUnit: 'days',
     responsibleRank: String(r.Assigned_Rank ?? ''),
     estimatedDuration: Number(r.Estimated_Hours ?? 0),
@@ -283,12 +332,12 @@ export async function createJobPlan(jp: Partial<JobPlan>, vesselId?: string): Pr
     Plan_Code: jp.code,
     Equipment: jp.equipmentId ? { id: jp.equipmentId } : undefined,
     Vessel: vesselId ? { id: vesselId } : undefined,
-    Frequency: jp.interval,
-    Estimated_Hours: jp.estimatedDuration,
+    Frequency: daysToFreq(jp.interval ?? 90),
+    Estimated_Hours: jp.estimatedDuration || undefined,
     Priority: 'Medium',
-    Assigned_Rank: jp.responsibleRank,
-    Last_Executed: jp.lastDone,
-    Next_Due_Date: jp.nextDue,
+    Assigned_Rank: jp.responsibleRank || undefined,
+    Last_Executed: jp.lastDone || undefined,
+    Next_Due_Date: jp.nextDue || undefined,
   });
 }
 
@@ -535,4 +584,259 @@ export async function updateSparePart(id: string, sp: Partial<SparePart>): Promi
 
 export async function deleteSparePart(id: string): Promise<void> {
   return deleteRecord('Spare_Parts', id);
+}
+
+// ── Equipment Specifications ────────────────────────────────────────────────
+
+const SPEC_FIELDS = ['Name', 'Equipment', 'Spec_Category', 'Spec_Name', 'Spec_Value', 'Unit', 'Sequence_No'];
+
+function mapSpec(r: Record<string, unknown>): EquipmentSpec {
+  const eq = r.Equipment as Record<string, unknown> | null;
+  return {
+    id: String(r.id),
+    equipmentId: eq ? String(eq.id) : '',
+    category: String(r.Spec_Category ?? ''),
+    specName: String(r.Spec_Name ?? r.Name ?? ''),
+    specValue: String(r.Spec_Value ?? ''),
+    unit: String(r.Unit ?? ''),
+    sequenceNo: r.Sequence_No != null ? Number(r.Sequence_No) : undefined,
+  };
+}
+
+export async function fetchSpecs(equipmentId: string): Promise<EquipmentSpec[]> {
+  const rows = await searchRecords('Equipment_Specifications', SPEC_FIELDS,
+    `(Equipment:equals:${equipmentId})`);
+  return (rows as Record<string, unknown>[]).map(mapSpec);
+}
+
+export async function createSpec(spec: Partial<EquipmentSpec>): Promise<string> {
+  return createRecord('Equipment_Specifications', {
+    Name: spec.specName,
+    Equipment: spec.equipmentId ? { id: spec.equipmentId } : undefined,
+    Spec_Category: spec.category,
+    Spec_Name: spec.specName,
+    Spec_Value: spec.specValue,
+    Unit: spec.unit || undefined,
+    Sequence_No: spec.sequenceNo || undefined,
+  });
+}
+
+export async function deleteSpec(id: string): Promise<void> {
+  return deleteRecord('Equipment_Specifications', id);
+}
+
+// ── Equipment Surveys ───────────────────────────────────────────────────────
+
+const SURVEY_FIELDS = ['Name', 'Equipment', 'Survey_Type', 'Survey_Date', 'Due_Date',
+  'Certificate_Number', 'Survey_Status', 'Surveyor', 'Classification_Society', 'Survey_Remarks'];
+
+function mapSurvey(r: Record<string, unknown>): EquipmentSurvey {
+  const eq = r.Equipment as Record<string, unknown> | null;
+  return {
+    id: String(r.id),
+    equipmentId: eq ? String(eq.id) : '',
+    surveyType: String(r.Survey_Type ?? ''),
+    surveyDate: String(r.Survey_Date ?? ''),
+    dueDate: String(r.Due_Date ?? ''),
+    certificateNumber: String(r.Certificate_Number ?? r.Name ?? ''),
+    status: String(r.Survey_Status ?? ''),
+    surveyor: String(r.Surveyor ?? ''),
+    classificationSociety: String(r.Classification_Society ?? ''),
+    remarks: String(r.Survey_Remarks ?? '') || undefined,
+  };
+}
+
+export async function fetchSurveys(equipmentId: string): Promise<EquipmentSurvey[]> {
+  const rows = await searchRecords('Equipment_Surveys', SURVEY_FIELDS,
+    `(Equipment:equals:${equipmentId})`);
+  return (rows as Record<string, unknown>[]).map(mapSurvey);
+}
+
+export async function createSurvey(s: Partial<EquipmentSurvey>): Promise<string> {
+  return createRecord('Equipment_Surveys', {
+    Name: s.certificateNumber || s.surveyType,
+    Equipment: s.equipmentId ? { id: s.equipmentId } : undefined,
+    Survey_Type: s.surveyType,
+    Survey_Date: s.surveyDate || undefined,
+    Due_Date: s.dueDate || undefined,
+    Certificate_Number: s.certificateNumber,
+    Survey_Status: s.status ?? 'Valid',
+    Surveyor: s.surveyor,
+    Classification_Society: s.classificationSociety,
+    Survey_Remarks: s.remarks || undefined,
+  });
+}
+
+export async function deleteSurvey(id: string): Promise<void> {
+  return deleteRecord('Equipment_Surveys', id);
+}
+
+// ── Condition Of Class ──────────────────────────────────────────────────────
+
+const COC_FIELDS = ['Name', 'Equipment', 'COC_Number', 'COC_Description', 'Issued_Date',
+  'Due_Date', 'COC_Status', 'Closed_Date', 'COC_Remarks'];
+
+function mapCoc(r: Record<string, unknown>): ConditionOfClass {
+  const eq = r.Equipment as Record<string, unknown> | null;
+  return {
+    id: String(r.id),
+    equipmentId: eq ? String(eq.id) : '',
+    cocNumber: String(r.COC_Number ?? r.Name ?? ''),
+    description: String(r.COC_Description ?? ''),
+    issuedDate: String(r.Issued_Date ?? ''),
+    dueDate: String(r.Due_Date ?? ''),
+    status: String(r.COC_Status ?? ''),
+    closedDate: String(r.Closed_Date ?? '') || undefined,
+    remarks: String(r.COC_Remarks ?? '') || undefined,
+  };
+}
+
+export async function fetchCocs(equipmentId: string): Promise<ConditionOfClass[]> {
+  const rows = await searchRecords('Condition_Of_Class', COC_FIELDS,
+    `(Equipment:equals:${equipmentId})`);
+  return (rows as Record<string, unknown>[]).map(mapCoc);
+}
+
+export async function createCoc(c: Partial<ConditionOfClass>): Promise<string> {
+  return createRecord('Condition_Of_Class', {
+    Name: c.cocNumber,
+    Equipment: c.equipmentId ? { id: c.equipmentId } : undefined,
+    COC_Number: c.cocNumber,
+    COC_Description: c.description,
+    Issued_Date: c.issuedDate || undefined,
+    Due_Date: c.dueDate || undefined,
+    COC_Status: c.status ?? 'Open',
+    Closed_Date: c.closedDate || undefined,
+    COC_Remarks: c.remarks || undefined,
+  });
+}
+
+export async function deleteCoc(id: string): Promise<void> {
+  return deleteRecord('Condition_Of_Class', id);
+}
+
+// ── Equipment Memoranda ─────────────────────────────────────────────────────
+
+const MEMO_FIELDS = ['Name', 'Equipment', 'Subject', 'Memo_Date', 'Memo_Content', 'Memo_Author', 'Memo_Priority'];
+
+function mapMemo(r: Record<string, unknown>): EquipmentMemorandum {
+  const eq = r.Equipment as Record<string, unknown> | null;
+  return {
+    id: String(r.id),
+    equipmentId: eq ? String(eq.id) : '',
+    subject: String(r.Subject ?? r.Name ?? ''),
+    memoDate: String(r.Memo_Date ?? ''),
+    content: String(r.Memo_Content ?? ''),
+    author: String(r.Memo_Author ?? ''),
+    priority: String(r.Memo_Priority ?? 'Info'),
+  };
+}
+
+export async function fetchMemos(equipmentId: string): Promise<EquipmentMemorandum[]> {
+  const rows = await searchRecords('Equipment_Memoranda', MEMO_FIELDS,
+    `(Equipment:equals:${equipmentId})`);
+  return (rows as Record<string, unknown>[]).map(mapMemo);
+}
+
+export async function createMemo(m: Partial<EquipmentMemorandum>): Promise<string> {
+  return createRecord('Equipment_Memoranda', {
+    Name: m.subject,
+    Equipment: m.equipmentId ? { id: m.equipmentId } : undefined,
+    Subject: m.subject,
+    Memo_Date: m.memoDate || undefined,
+    Memo_Content: m.content,
+    Memo_Author: m.author,
+    Memo_Priority: m.priority ?? 'Info',
+  });
+}
+
+export async function deleteMemo(id: string): Promise<void> {
+  return deleteRecord('Equipment_Memoranda', id);
+}
+
+// ── HSEQ Records ────────────────────────────────────────────────────────────
+
+const HSEQ_FIELDS = ['Name', 'Equipment', 'Record_Type', 'HSEQ_Title', 'HSEQ_Date',
+  'HSEQ_Description', 'HSEQ_Status', 'HSEQ_Author', 'Action_Required'];
+
+function mapHseq(r: Record<string, unknown>): HseqRecord {
+  const eq = r.Equipment as Record<string, unknown> | null;
+  return {
+    id: String(r.id),
+    equipmentId: eq ? String(eq.id) : '',
+    recordType: String(r.Record_Type ?? ''),
+    title: String(r.HSEQ_Title ?? r.Name ?? ''),
+    date: String(r.HSEQ_Date ?? ''),
+    description: String(r.HSEQ_Description ?? ''),
+    status: String(r.HSEQ_Status ?? ''),
+    author: String(r.HSEQ_Author ?? ''),
+    actionRequired: String(r.Action_Required ?? '') || undefined,
+  };
+}
+
+export async function fetchHseq(equipmentId: string): Promise<HseqRecord[]> {
+  const rows = await searchRecords('HSEQ_Records', HSEQ_FIELDS,
+    `(Equipment:equals:${equipmentId})`);
+  return (rows as Record<string, unknown>[]).map(mapHseq);
+}
+
+export async function createHseqRecord(h: Partial<HseqRecord>): Promise<string> {
+  return createRecord('HSEQ_Records', {
+    Name: h.title,
+    Equipment: h.equipmentId ? { id: h.equipmentId } : undefined,
+    Record_Type: h.recordType,
+    HSEQ_Title: h.title,
+    HSEQ_Date: h.date || undefined,
+    HSEQ_Description: h.description,
+    HSEQ_Status: h.status ?? 'Open',
+    HSEQ_Author: h.author,
+    Action_Required: h.actionRequired || undefined,
+  });
+}
+
+export async function deleteHseqRecord(id: string): Promise<void> {
+  return deleteRecord('HSEQ_Records', id);
+}
+
+// ── Equipment Attachments (CRM native) ──────────────────────────────────────
+
+export async function fetchAttachments(module: string, recordId: string): Promise<CrmAttachment[]> {
+  const url = `${getBase()}/${module}/${recordId}/Attachments`;
+  const res = await fetch(url, { headers: getHeaders() });
+  const text = await res.text();
+  if (!text || text.trim() === '') return [];
+  try {
+    const json = JSON.parse(text);
+    if (json.status === 'error' || json.code === 'NO_DATA') return [];
+    return ((json.data ?? []) as Record<string, unknown>[]).map(r => ({
+      id: String(r.id),
+      fileName: String(r.File_Name ?? ''),
+      size: Number(r.Size ?? 0),
+      createdTime: String(r.Created_Time ?? ''),
+      createdBy: (r.$owner as Record<string, unknown>)?.name as string ?? '',
+      description: String(r.Description ?? ''),
+    }));
+  } catch { return []; }
+}
+
+export async function uploadAttachment(module: string, recordId: string, file: File, description?: string): Promise<void> {
+  const url = `${getBase()}/${module}/${recordId}/Attachments`;
+  const form = new FormData();
+  form.append('file', file);
+  if (description) form.append('description', description);
+  const headers: Record<string, string> = { ...getHeaders() };
+  const res = await fetch(url, { method: 'POST', headers, body: form });
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+}
+
+export async function deleteAttachment(module: string, recordId: string, attachmentId: string): Promise<void> {
+  const url = `${getBase()}/${module}/${recordId}/Attachments/${attachmentId}`;
+  const res = await fetch(url, { method: 'DELETE', headers: getHeaders() });
+  if (!res.ok) throw new Error(`Delete attachment failed: ${res.status}`);
+}
+
+export function getAttachmentDownloadUrl(module: string, recordId: string, attachmentId: string): string {
+  const base = (localStorage.getItem('pls_api_domain') ?? 'https://www.zohoapis.in') + '/crm/v3';
+  const token = localStorage.getItem('pls_access_token');
+  return `${base}/${module}/${recordId}/Attachments/${attachmentId}?access_token=${token}`;
 }

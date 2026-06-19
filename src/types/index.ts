@@ -28,7 +28,8 @@ export interface Vessel {
 
 export interface Equipment {
   id: string;
-  code: string;
+  code: string;        // hierarchical code e.g. "100.1" (display as #100.1)
+  crmCode?: string;    // CRM auto-number e.g. "EQ-37"
   name: string;
   parentId?: string;
   parentName?: string;
@@ -48,8 +49,94 @@ export interface Equipment {
   responsibleRank?: string;
   description?: string;
   runningHours?: number;
+  vesselId?: string;
+  // Extended fields
+  safetyLevel?: string;
+  builderLicence?: string;
+  drawingNumber?: string;
+  department?: string;
+  className?: string;
+  preferredVendor?: string;
+  idNumber?: string;
+  partNumber?: string;
+  imoTier?: string;
+  equipmentDimension?: string;
+  equipmentMaterial?: string;
+  sd?: string;
+  isAlarm?: boolean;
+  isMainEngine?: boolean;
+  isCirculating?: boolean;
+  mountAllowed?: boolean;
+  rhrsSeparately?: boolean;
+  mdRequired?: boolean;
   children?: Equipment[];
   isGroup?: boolean;
+}
+
+export interface EquipmentSpec {
+  id: string;
+  equipmentId: string;
+  category: string;
+  specName: string;
+  specValue: string;
+  unit?: string;
+  sequenceNo?: number;
+}
+
+export interface EquipmentSurvey {
+  id: string;
+  equipmentId: string;
+  surveyType: string;
+  surveyDate: string;
+  dueDate: string;
+  certificateNumber: string;
+  status: string;
+  surveyor: string;
+  classificationSociety: string;
+  remarks?: string;
+}
+
+export interface ConditionOfClass {
+  id: string;
+  equipmentId: string;
+  cocNumber: string;
+  description: string;
+  issuedDate: string;
+  dueDate: string;
+  status: string;
+  closedDate?: string;
+  remarks?: string;
+}
+
+export interface EquipmentMemorandum {
+  id: string;
+  equipmentId: string;
+  subject: string;
+  memoDate: string;
+  content: string;
+  author: string;
+  priority: string;
+}
+
+export interface HseqRecord {
+  id: string;
+  equipmentId: string;
+  recordType: string;
+  title: string;
+  date: string;
+  description: string;
+  status: string;
+  author: string;
+  actionRequired?: string;
+}
+
+export interface CrmAttachment {
+  id: string;
+  fileName: string;
+  size: number;
+  createdTime: string;
+  createdBy?: string;
+  description?: string;
 }
 
 export interface JobPlan {

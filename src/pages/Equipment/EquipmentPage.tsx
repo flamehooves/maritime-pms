@@ -23,6 +23,42 @@ const glassPanel: React.CSSProperties = {
   boxShadow: '0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
 };
 
+// Standard maritime system codes (multiples of 100)
+const SYSTEM_CODES: Record<string, number> = {
+  'Propulsion': 100,
+  'Auxiliary Engine': 200,
+  'Machinery': 300,
+  "Ship's Equipment": 400,
+  'Life Saving': 500,
+  'Navigation & Steering': 600,
+  'Environmental': 700,
+  'Compressed Air': 800,
+  'Fresh Water': 900,
+  'Bilge & Ballast': 1000,
+  'Safety': 1100,
+  'Electrical': 1200,
+  'Ballast': 1300,
+};
+
+let _nextSysCode = 1400;
+const _assignedSysCodes: Record<string, number> = { ...SYSTEM_CODES };
+
+function getSysCode(system: string): number {
+  if (_assignedSysCodes[system]) return _assignedSysCodes[system];
+  _assignedSysCodes[system] = _nextSysCode;
+  _nextSysCode += 100;
+  return _assignedSysCodes[system];
+}
+
+function assignHierarchyCodes(nodes: Equipment[], prefix: string): void {
+  nodes.forEach((node, i) => {
+    node.code = `${prefix}.${i + 1}`;
+    if (node.children && node.children.length > 0) {
+      assignHierarchyCodes(node.children, node.code);
+    }
+  });
+}
+
 function buildEquipmentTree(flat: Equipment[]): Equipment[] {
   // Build a true N-level hierarchy using parentId, then group root nodes by System.
   const byId: Record<string, Equipment> = {};
@@ -45,13 +81,18 @@ function buildEquipmentTree(flat: Equipment[]): Equipment[] {
     bySystem[sys].push(node);
   }
 
-  return Object.entries(bySystem).map(([sys, items]) => ({
-    id: `sys_${sys}`,
-    code: sys,
-    name: sys,
-    isGroup: true,
-    children: items,
-  } as Equipment));
+  return Object.entries(bySystem).map(([sys, items]) => {
+    const sysCode = getSysCode(sys);
+    // Assign hierarchical codes: 100.1, 100.2, 100.1.1 etc.
+    assignHierarchyCodes(items, String(sysCode));
+    return {
+      id: `sys_${sys}`,
+      code: String(sysCode),
+      name: sys,
+      isGroup: true,
+      children: items,
+    } as Equipment;
+  });
 }
 
 function EquipmentHeatmap({ flat, onSelect }: { flat: Equipment[]; onSelect: (eq: Equipment) => void }) {

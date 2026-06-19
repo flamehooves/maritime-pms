@@ -60,12 +60,22 @@ function TreeNode({ node, depth, showCodes, expandedIds, toggleExpand, selectedI
           <span className="w-4 flex-shrink-0" />
         )}
         <span className={`status-dot flex-shrink-0 ${dotClass}`}></span>
-        {showCodes && !node.isGroup && (
-          <span className="eq-code text-xs font-mono text-slate-400 flex-shrink-0 min-w-20">{node.code}</span>
+        {node.isGroup ? (
+          <span className="truncate text-xs font-bold text-slate-500 uppercase tracking-wider">
+            #{node.code} {node.name}
+          </span>
+        ) : (
+          <>
+            {showCodes && (
+              <span className="eq-code text-xs font-mono text-indigo-500 flex-shrink-0 font-semibold" style={{ minWidth: 52 }}>
+                #{node.code}
+              </span>
+            )}
+            <span className={`truncate text-sm text-slate-700 ${isSelected ? 'text-sky-700 font-medium' : ''}`}>
+              {node.name}
+            </span>
+          </>
         )}
-        <span className={`truncate ${node.isGroup ? 'text-xs font-semibold text-slate-600 uppercase tracking-wide' : 'text-sm text-slate-700'} ${isSelected ? 'text-sky-700 font-medium' : ''}`}>
-          {node.name}
-        </span>
       </div>
       {hasChildren && isExpanded && (
         <div>
