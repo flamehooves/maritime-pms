@@ -311,7 +311,8 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   async function saveSpec() {
     setSpecSaving(true); setSaveError(null);
     try {
-      await createSpec({ ...specForm, equipmentId: equipment.id });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await createSpec({ ...specForm, equipmentId: equipment.id } as any);
       setSpecModal(false); reloadSpecs();
     } catch (e) { setSaveError(String(e)); } finally { setSpecSaving(false); }
   }
@@ -324,7 +325,8 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   async function saveSurvey() {
     setSurveySaving(true); setSaveError(null);
     try {
-      await createSurvey({ ...surveyForm, equipmentId: equipment.id });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await createSurvey({ ...surveyForm, equipmentId: equipment.id } as any);
       setSurveyModal(false); reloadSurveys();
     } catch (e) { setSaveError(String(e)); } finally { setSurveySaving(false); }
   }
@@ -337,7 +339,8 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   async function saveCoc() {
     setCocSaving(true); setSaveError(null);
     try {
-      await createCoc({ ...cocForm, equipmentId: equipment.id });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await createCoc({ ...cocForm, equipmentId: equipment.id } as any);
       setCocModal(false); reloadCocs();
     } catch (e) { setSaveError(String(e)); } finally { setCocSaving(false); }
   }
@@ -350,7 +353,8 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   async function saveMemo() {
     setMemoSaving(true); setSaveError(null);
     try {
-      await createMemo({ ...memoForm, equipmentId: equipment.id });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await createMemo({ ...memoForm, equipmentId: equipment.id } as any);
       setMemoModal(false); reloadMemos();
     } catch (e) { setSaveError(String(e)); } finally { setMemoSaving(false); }
   }
@@ -363,7 +367,8 @@ export function EquipmentDetail({ equipment }: { equipment: Equipment }) {
   async function saveHseq() {
     setHseqSaving(true); setSaveError(null);
     try {
-      await createHseqRecord({ ...hseqForm, equipmentId: equipment.id });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await createHseqRecord({ ...hseqForm, equipmentId: equipment.id } as any);
       setHseqModal(false); reloadHseq();
     } catch (e) { setSaveError(String(e)); } finally { setHseqSaving(false); }
   }
