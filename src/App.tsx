@@ -22,6 +22,7 @@ import { DueJobsPage } from './pages/DueJobs/DueJobsPage';
 import { TomFormsPage } from './pages/TomForms/TomFormsPage';
 import { RunningHoursPage } from './pages/RunningHours/RunningHoursPage';
 import { GuaranteeClaimsPage } from './pages/GuaranteeClaims/GuaranteeClaimsPage';
+import { FleetMapPage } from './pages/FleetMap/FleetMapPage';
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
               <Route path="tom-forms" element={<TomFormsPage />} />
               <Route path="running-hours" element={<RunningHoursPage />} />
               <Route path="guarantee-claims" element={<GuaranteeClaimsPage />} />
+              <Route path="fleet-map" element={<FleetMapPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

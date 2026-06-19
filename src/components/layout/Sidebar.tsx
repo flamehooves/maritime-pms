@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Ship, Cog, ClipboardList, Wrench, Package,
   AlertTriangle, CheckSquare, BarChart3, Settings, ChevronLeft,
   ChevronRight, Anchor, LogOut, User, ChevronUp, Mail, Shield,
-  Clock, Gauge, ClipboardCheck
+  Clock, Gauge, ClipboardCheck, Map
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -15,6 +15,7 @@ type NavItem = { path: string; label: string; icon: React.ElementType; roles: Ro
 const allNavItems: NavItem[] = [
   { path: '/',          label: 'Dashboard',        icon: LayoutDashboard,  roles: ['admin', 'chief_engineer', 'technician'] },
   { path: '/vessels',   label: 'Vessels',           icon: Ship,             roles: ['admin', 'chief_engineer'] },
+  { path: '/fleet-map', label: 'Fleet Map',         icon: Map,              roles: ['admin', 'chief_engineer'] },
   // MAINTENANCE section
   { path: '/equipment',          label: 'Equipments',        icon: Cog,            roles: ['admin', 'chief_engineer', 'technician'], section: 'MAINTENANCE' },
   { path: '/due-jobs',           label: 'Due Jobs',          icon: Clock,          roles: ['admin', 'chief_engineer', 'technician'] },

@@ -80,6 +80,7 @@ const VESSEL_FIELDS = [
   'Name','IMO_Number','Vessel_Type','Flag','Build_Year','Owner','Manager',
   'Class_Society','DWT','GRT','Call_Sign','Port_of_Registry','Vessel_Status',
   'Map_Position_X','Map_Position_Y','Vessel_Image_URL','Status',
+  'Latitude','Longitude','MMSI','Last_Position_Update',
 ];
 
 function mapVessel(r: Record<string, unknown>): Vessel {
@@ -102,6 +103,10 @@ function mapVessel(r: Record<string, unknown>): Vessel {
     mapPosition: r.Map_Position_X != null
       ? { x: Number(r.Map_Position_X), y: Number(r.Map_Position_Y ?? 0) }
       : undefined,
+    latitude: r.Latitude != null ? Number(r.Latitude) : undefined,
+    longitude: r.Longitude != null ? Number(r.Longitude) : undefined,
+    mmsi: r.MMSI ? String(r.MMSI) : undefined,
+    lastPositionUpdate: r.Last_Position_Update ? String(r.Last_Position_Update) : undefined,
   };
 }
 
@@ -135,6 +140,17 @@ export async function updateVessel(id: string, v: Partial<Vessel>): Promise<void
     Call_Sign: v.callSign, Port_of_Registry: v.port, Status: v.status,
     Vessel_Status: v.vesselStatus,
     Map_Position_X: v.mapPosition?.x, Map_Position_Y: v.mapPosition?.y,
+    Latitude: v.latitude, Longitude: v.longitude,
+    MMSI: v.mmsi, Last_Position_Update: v.lastPositionUpdate,
+  });
+}
+
+export async function updateVesselPosition(id: string, lat: number, lng: number, mmsi?: string): Promise<void> {
+  await updateRecord('Vessels', id, {
+    Latitude: lat,
+    Longitude: lng,
+    MMSI: mmsi || undefined,
+    Last_Position_Update: new Date().toISOString(),
   });
 }
 
