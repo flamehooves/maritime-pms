@@ -22,9 +22,6 @@ import { DueJobsPage } from './pages/DueJobs/DueJobsPage';
 import { TomFormsPage } from './pages/TomForms/TomFormsPage';
 import { RunningHoursPage } from './pages/RunningHours/RunningHoursPage';
 import { GuaranteeClaimsPage } from './pages/GuaranteeClaims/GuaranteeClaimsPage';
-import { TechnicalFormsPage } from './pages/TechnicalForms/TechnicalFormsPage';
-import { DynamicFormsPage } from './pages/DynamicForms/DynamicFormsPage';
-import { PmsAdminPage } from './pages/PmsAdmin/PmsAdminPage';
 
 function App() {
   return (
@@ -54,9 +51,6 @@ function App() {
               <Route path="tom-forms" element={<TomFormsPage />} />
               <Route path="running-hours" element={<RunningHoursPage />} />
               <Route path="guarantee-claims" element={<GuaranteeClaimsPage />} />
-              <Route path="technical-forms" element={<TechnicalFormsPage />} />
-              <Route path="dynamic-forms" element={<DynamicFormsPage />} />
-              <Route path="pms-admin" element={<PmsAdminPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

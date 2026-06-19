@@ -839,6 +839,10 @@ export async function createRunningHoursEntry(entry: Partial<RunningHoursLog>, v
   });
 }
 
+export async function deleteRunningHoursEntry(id: string): Promise<void> {
+  return deleteRecord('Running_Hours_Log', id);
+}
+
 // ── TOM Forms ────────────────────────────────────────────────────────────────
 
 const TOM_FIELDS = ['Name','Vessel','Month','Year','Week_Number','Category',

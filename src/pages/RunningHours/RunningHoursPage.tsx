@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Gauge, Plus, X, Loader, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
+import { Gauge, Plus, X, Loader, AlertTriangle, Clock, TrendingUp, Trash2 } from 'lucide-react';
 import { useCrmFetch } from '../../hooks/useCrmFetch';
-import { fetchRunningHoursLog, createRunningHoursEntry, fetchEquipments, updateEquipment } from '../../services/crmService';
+import { fetchRunningHoursLog, createRunningHoursEntry, deleteRunningHoursEntry, fetchEquipments, updateEquipment } from '../../services/crmService';
 import { useApp } from '../../context/AppContext';
 import type { RunningHoursLog } from '../../types';
 
@@ -59,6 +59,7 @@ export function RunningHoursPage() {
   const [thresholdVal, setThresholdVal] = useState<number>(0);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loading = logsLoading || eqLoading;
 
@@ -92,6 +93,12 @@ export function RunningHoursPage() {
       await updateEquipment(thresholdEqId, { nextDueHours: thresholdVal });
       setModal(null); reloadEq();
     } catch (e) { setSaveError(String(e)); } finally { setSaving(false); }
+  }
+
+  async function handleDeleteLog(id: string) {
+    if (!confirm('Delete this log entry?')) return;
+    setDeletingId(id);
+    try { await deleteRunningHoursEntry(id); reload(); } finally { setDeletingId(null); }
   }
 
   return (
@@ -257,7 +264,7 @@ export function RunningHoursPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'rgba(0,0,0,0.02)' }}>
-                {['Equipment', 'Reading (hrs)', 'Hours Since Last', 'Log Date', 'Reported By', 'Notes'].map(h => (
+                {['Equipment', 'Reading (hrs)', 'Hours Since Last', 'Log Date', 'Reported By', 'Notes', ''].map(h => (
                   <th key={h} style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '8px 14px', textAlign: 'left', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
@@ -271,6 +278,11 @@ export function RunningHoursPage() {
                   <td style={{ fontSize: 12, padding: '9px 14px', color: '#374151' }}>{log.logDate || '—'}</td>
                   <td style={{ fontSize: 12, padding: '9px 14px', color: '#374151' }}>{log.reportedBy || '—'}</td>
                   <td style={{ fontSize: 12, padding: '9px 14px', color: '#94A3B8', maxWidth: 200 }}><span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.notes || '—'}</span></td>
+                  <td style={{ padding: '9px 14px' }}>
+                    <button onClick={() => handleDeleteLog(log.id)} disabled={deletingId === log.id} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, color: '#DC2626', opacity: deletingId === log.id ? 0.4 : 0.6 }} title="Delete log entry">
+                      {deletingId === log.id ? <Loader size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
