@@ -150,7 +150,7 @@ export async function updateVesselPosition(id: string, lat: number, lng: number,
     Latitude: lat,
     Longitude: lng,
     MMSI: mmsi || undefined,
-    Last_Position_Update: new Date().toISOString(),
+    Last_Position_Update: new Date().toISOString().replace('Z', '+00:00').slice(0, 19) + '+00:00',
   });
 }
 
