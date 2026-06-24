@@ -1,123 +1,18 @@
 import React, { useState } from 'react';
 import { MdmTable } from '../../components/ui/MdmTable';
-import type { ColDef, FieldDef } from '../../components/ui/MdmTable';
-import {
-  fetchAdminRoles, createAdminRole, updateAdminRole, deleteAdminRole,
-  fetchAdminDesignations, createAdminDesignation, updateAdminDesignation, deleteAdminDesignation,
-  fetchEmailConfigs, createEmailConfig, updateEmailConfig, deleteEmailConfig,
-  fetchEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate,
-  fetchAuditLogs,
-  fetchDashboardTiles, createDashboardTile, updateDashboardTile, deleteDashboardTile,
-  fetchCrmUsers,
-} from '../../services/mdmAdminService';
+import type { ColDef } from '../../components/ui/MdmTable';
+import { fetchAuditLogs, fetchCrmUsers } from '../../services/mdmAdminService';
 import { useCrmFetch } from '../../hooks/useCrmFetch';
-import { Loader, AlertCircle, UserPlus, Mail, Shield, Activity, LayoutDashboard, Users } from 'lucide-react';
+import { Loader, AlertCircle, Users, Activity } from 'lucide-react';
 
 // ─── sub-nav ────────────────────────────────────────────────────────────────────
 type Section = { key: string; label: string; icon: React.ElementType; group: string };
 const SECTIONS: Section[] = [
-  { key: 'roles',          label: 'Role Creation',       icon: Shield,          group: 'Administration' },
-  { key: 'designations',   label: 'User Designations',   icon: Users,           group: 'Administration' },
-  { key: 'email-config',   label: 'Email Configuration', icon: Mail,            group: 'Administration' },
-  { key: 'email-templates',label: 'Email Templates',     icon: Mail,            group: 'Administration' },
-  { key: 'users',          label: 'Users & Roles',       icon: UserPlus,        group: 'Users' },
-  { key: 'dashboard-tiles',label: 'Dashboard Tiles',     icon: LayoutDashboard, group: 'Dashboard Admin' },
-  { key: 'audit-log',      label: 'Audit Log',           icon: Activity,        group: 'Monitoring' },
+  { key: 'users',     label: 'Users & Roles', icon: Users,    group: 'Users' },
+  { key: 'audit-log', label: 'Audit Log',     icon: Activity, group: 'Monitoring' },
 ];
 
-const STATUS_OPTS = ['Active', 'Inactive'];
-
-// ─── Role panel ──────────────────────────────────────────────────────────────
-const roleCols: ColDef[] = [
-  { key: 'Name',        label: 'Name' },
-  { key: 'Role_Type',   label: 'Type',        width: '140px' },
-  { key: 'Description', label: 'Description' },
-  { key: 'Status',      label: 'Status',      width: '110px' },
-];
-const roleFields: FieldDef[] = [
-  { key: 'Name',        label: 'Name',        required: true },
-  { key: 'Role_Type',   label: 'Role Type',   type: 'select', options: ['System Role', 'Custom Role'] },
-  { key: 'Description', label: 'Description', type: 'textarea' },
-  { key: 'Permissions', label: 'Permissions', type: 'textarea', placeholder: 'Comma-separated module permissions' },
-  { key: 'Status',      label: 'Status',      type: 'select', options: STATUS_OPTS },
-];
-const roleDefault = { Name: '', Role_Type: 'Custom Role', Description: '', Permissions: '', Status: 'Active' };
-
-// ─── Designation panel ────────────────────────────────────────────────────────
-const desgCols: ColDef[] = [
-  { key: 'Code',             label: 'Code',        width: '90px' },
-  { key: 'Name',             label: 'Name' },
-  { key: 'Designation_Type', label: 'Type',        width: '160px' },
-  { key: 'Role',             label: 'Role',        width: '140px' },
-  { key: 'Rank',             label: 'Rank',        width: '120px' },
-  { key: 'Status',           label: 'Status',      width: '110px' },
-];
-const desgFields: FieldDef[] = [
-  { key: 'Name',             label: 'Name',             required: true },
-  { key: 'Code',             label: 'Code' },
-  { key: 'Designation_Type', label: 'Designation Type', type: 'select', options: ['User Designation', 'Vessel Designation', 'Role Rank Mapping'] },
-  { key: 'Role',             label: 'Role',             placeholder: 'e.g. Chief Engineer' },
-  { key: 'Department',       label: 'Department' },
-  { key: 'Rank',             label: 'Rank',             placeholder: 'e.g. Senior Officer' },
-  { key: 'Status',           label: 'Status',           type: 'select', options: STATUS_OPTS },
-];
-const desgDefault = { Name: '', Code: '', Designation_Type: 'User Designation', Role: '', Department: '', Rank: '', Status: 'Active' };
-
-// ─── Email Config panel ───────────────────────────────────────────────────────
-const ecCols: ColDef[] = [
-  { key: 'Name',         label: 'Name' },
-  { key: 'Host',         label: 'Host' },
-  { key: 'Port_Number',  label: 'Port',   width: '80px' },
-  { key: 'Config_Type',  label: 'Type',   width: '100px' },
-  { key: 'From_Address', label: 'From' },
-  { key: 'Status',       label: 'Status', width: '110px' },
-];
-const ecFields: FieldDef[] = [
-  { key: 'Name',         label: 'Name',         required: true },
-  { key: 'Host',         label: 'Host',         placeholder: 'e.g. smtp.gmail.com' },
-  { key: 'Port_Number',  label: 'Port',         type: 'number' },
-  { key: 'Config_Type',  label: 'Config Type',  type: 'select', options: ['SMTP', 'IMAP', 'POP3'] },
-  { key: 'From_Address', label: 'From Address', type: 'email' },
-  { key: 'Status',       label: 'Status',       type: 'select', options: STATUS_OPTS },
-];
-const ecDefault = { Name: '', Host: '', Port_Number: 587, Config_Type: 'SMTP', From_Address: '', Status: 'Active' };
-
-// ─── Email Templates panel ────────────────────────────────────────────────────
-const etCols: ColDef[] = [
-  { key: 'Name',          label: 'Name' },
-  { key: 'Template_Type', label: 'Type',    width: '160px' },
-  { key: 'Subject',       label: 'Subject' },
-  { key: 'Status',        label: 'Status',  width: '110px' },
-];
-const etFields: FieldDef[] = [
-  { key: 'Name',          label: 'Name',          required: true },
-  { key: 'Template_Type', label: 'Template Type', type: 'select', options: ['Job Order', 'Defect Alert', 'Approval Request', 'System Notification', 'Report'] },
-  { key: 'Subject',       label: 'Subject' },
-  { key: 'Body_HTML',     label: 'Body',          type: 'textarea' },
-  { key: 'Status',        label: 'Status',        type: 'select', options: STATUS_OPTS },
-];
-const etDefault = { Name: '', Template_Type: 'Job Order', Subject: '', Body_HTML: '', Status: 'Active' };
-
-// ─── Dashboard Tiles panel ────────────────────────────────────────────────────
-const dtCols: ColDef[] = [
-  { key: 'Name',       label: 'Name' },
-  { key: 'Icon',       label: 'Icon',  width: '80px' },
-  { key: 'Route',      label: 'Route' },
-  { key: 'Role',       label: 'Role',  width: '140px' },
-  { key: 'Sort_Order', label: 'Order', width: '80px' },
-  { key: 'Visible',    label: 'Visible', width: '90px', render: (v) => <span className="text-xs font-medium" style={{ color: v ? '#059669' : '#94a3b8' }}>{v ? 'Yes' : 'No'}</span> },
-];
-const dtFields: FieldDef[] = [
-  { key: 'Name',       label: 'Name',       required: true },
-  { key: 'Icon',       label: 'Icon',       placeholder: 'e.g. LayoutDashboard' },
-  { key: 'Route',      label: 'Route',      placeholder: 'e.g. /dashboard' },
-  { key: 'Color',      label: 'Color',      placeholder: 'e.g. #4f46e6' },
-  { key: 'Role',       label: 'Role',       type: 'select', options: ['admin', 'chief_engineer', 'technician', 'all'] },
-  { key: 'Sort_Order', label: 'Sort Order', type: 'number' },
-];
-const dtDefault = { Name: '', Icon: '', Route: '', Color: '#4f46e6', Role: 'all', Sort_Order: 0 };
-
-// ─── Audit Log (read-only) ─────────────────────────────────────────────────────
+// ─── Audit Log columns ────────────────────────────────────────────────────────
 const alCols: ColDef[] = [
   { key: 'Action_Time', label: 'Timestamp',  width: '160px' },
   { key: 'User_Name',   label: 'User',       width: '140px' },
@@ -126,7 +21,7 @@ const alCols: ColDef[] = [
   { key: 'IP_Address',  label: 'IP Address', width: '120px' },
 ];
 
-// ─── Users panel (Zoho CRM Users API) ────────────────────────────────────────
+// ─── Users panel (Zoho CRM Users API — view only) ────────────────────────────
 function UsersPanel() {
   const { data: users, loading, error, reload } = useCrmFetch(fetchCrmUsers);
   return (
@@ -134,7 +29,7 @@ function UsersPanel() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h2 className="text-lg font-bold text-slate-900">Users &amp; Roles</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Zoho CRM users — managed via OAuth user API</p>
+          <p className="text-xs text-slate-500 mt-0.5">Zoho CRM users — managed via Zoho user administration</p>
         </div>
       </div>
 
@@ -173,9 +68,9 @@ function UsersPanel() {
                   const profile  = String((rec.profile as Record<string, unknown>)?.name ?? rec.profile ?? '—');
                   const role     = String((rec.role as Record<string, unknown>)?.name ?? rec.role ?? '—');
                   const status   = String(rec.status ?? 'active');
-                  const initials = fullName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-                  const colors = ['#4f46e6', '#0ea5e9', '#059669', '#d97706', '#dc2626'];
-                  const bg = colors[i % colors.length];
+                  const initials = fullName.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
+                  const colors   = ['#4f46e6', '#0ea5e9', '#059669', '#d97706', '#dc2626'];
+                  const bg       = colors[i % colors.length];
                   return (
                     <tr key={String(rec.id ?? i)}>
                       <td>
@@ -206,9 +101,9 @@ function UsersPanel() {
   );
 }
 
+// ─── Main page ────────────────────────────────────────────────────────────────
 export function AdminPage() {
-  const [activeKey, setActiveKey] = useState('roles');
-
+  const [activeKey, setActiveKey] = useState('users');
   const groups = [...new Set(SECTIONS.map(s => s.group))];
 
   return (
@@ -216,88 +111,67 @@ export function AdminPage() {
       {/* Left sub-nav */}
       <aside
         className="flex-shrink-0 overflow-y-auto"
-        style={{ width: 220, background: '#fff', borderRight: '1px solid #e2e8f0' }}
+        style={{ width: 224, background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(20px)', borderRight: '1px solid rgba(255,255,255,0.85)', boxShadow: '1px 0 0 rgba(0,0,0,0.04)' }}
       >
-        {groups.map(group => (
-          <div key={group}>
-            <div style={{ padding: '12px 16px 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#94a3b8', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>
-              {group}
+        <div className="px-2 py-3">
+          {groups.map((group, gi) => (
+            <div key={group}>
+              <div style={{ padding: gi === 0 ? '4px 10px 4px' : '16px 10px 4px', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(60,60,67,0.35)' }}>
+                {group}
+              </div>
+              {SECTIONS.filter(s => s.group === group).map(sec => {
+                const Icon = sec.icon;
+                const active = activeKey === sec.key;
+                return (
+                  <button
+                    key={sec.key}
+                    onClick={() => setActiveKey(sec.key)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '9px 14px',
+                      fontSize: 12.5,
+                      fontWeight: active ? 600 : 500,
+                      color: active ? '#4338ca' : 'rgba(60,60,67,0.65)',
+                      background: active ? 'rgba(79,70,230,0.14)' : 'transparent',
+                      boxShadow: active ? 'inset 0 0 0 1px rgba(79,70,230,0.3)' : 'none',
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      transition: 'all 0.12s',
+                      border: 'none',
+                      marginBottom: 1,
+                    }}
+                    onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(79,70,230,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#1C1C1E'; } }}
+                    onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'rgba(60,60,67,0.65)'; } }}
+                  >
+                    <Icon size={13} style={{ flexShrink: 0, opacity: 0.7 }} />
+                    {sec.label}
+                  </button>
+                );
+              })}
             </div>
-            {SECTIONS.filter(s => s.group === group).map(sec => {
-              const Icon = sec.icon;
-              const active = activeKey === sec.key;
-              return (
-                <button
-                  key={sec.key}
-                  onClick={() => setActiveKey(sec.key)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '8px 16px',
-                    fontSize: 12.5,
-                    fontWeight: active ? 600 : 400,
-                    color: active ? '#0ea5e9' : '#475569',
-                    background: active ? '#f0f9ff' : 'transparent',
-                    borderLeft: `3px solid ${active ? '#0ea5e9' : 'transparent'}`,
-                    cursor: 'pointer',
-                    transition: 'all 0.1s',
-                    border: 'none',
-                    borderLeftWidth: 3,
-                    borderLeftStyle: 'solid',
-                    borderLeftColor: active ? '#0ea5e9' : 'transparent',
-                  }}
-                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'; }}
-                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-                >
-                  <Icon size={13} style={{ flexShrink: 0, opacity: 0.7 }} />
-                  {sec.label}
-                </button>
-              );
-            })}
-          </div>
-        ))}
+          ))}
+        </div>
       </aside>
 
       {/* Main panel */}
       <div className="flex-1 overflow-y-auto p-6">
-        {activeKey === 'roles' && (
-          <MdmTable key="roles" title="Role Creation" subtitle="Define system and custom roles"
-            columns={roleCols} fields={roleFields} emptyDefault={roleDefault}
-            fetchFn={fetchAdminRoles} createFn={createAdminRole} updateFn={updateAdminRole} deleteFn={deleteAdminRole}
-          />
-        )}
-        {activeKey === 'designations' && (
-          <MdmTable key="designations" title="User Designations" subtitle="User designations, vessel designations and role-rank mapping"
-            columns={desgCols} fields={desgFields} emptyDefault={desgDefault}
-            fetchFn={fetchAdminDesignations} createFn={createAdminDesignation} updateFn={updateAdminDesignation} deleteFn={deleteAdminDesignation}
-          />
-        )}
-        {activeKey === 'email-config' && (
-          <MdmTable key="email-config" title="Email Configuration" subtitle="SMTP / IMAP / POP3 mail server settings"
-            columns={ecCols} fields={ecFields} emptyDefault={ecDefault}
-            fetchFn={fetchEmailConfigs} createFn={createEmailConfig} updateFn={updateEmailConfig} deleteFn={deleteEmailConfig}
-          />
-        )}
-        {activeKey === 'email-templates' && (
-          <MdmTable key="email-templates" title="Email Templates" subtitle="Notification and alert email templates"
-            columns={etCols} fields={etFields} emptyDefault={etDefault}
-            fetchFn={fetchEmailTemplates} createFn={createEmailTemplate} updateFn={updateEmailTemplate} deleteFn={deleteEmailTemplate}
-          />
-        )}
-        {activeKey === 'users' && <UsersPanel />}
-        {activeKey === 'dashboard-tiles' && (
-          <MdmTable key="dashboard-tiles" title="Dashboard Tiles" subtitle="Configure visible tiles and their order on the admin dashboard"
-            columns={dtCols} fields={dtFields} emptyDefault={dtDefault}
-            fetchFn={fetchDashboardTiles} createFn={createDashboardTile} updateFn={updateDashboardTile} deleteFn={deleteDashboardTile}
-          />
-        )}
+        {activeKey === 'users'     && <UsersPanel />}
         {activeKey === 'audit-log' && (
-          <MdmTable key="audit-log" title="Audit Log" subtitle="Read-only record of all CRM actions performed in the app"
-            columns={alCols} fields={[]} emptyDefault={{}}
-            fetchFn={fetchAuditLogs} createFn={async () => {}} updateFn={async () => {}} deleteFn={async () => {}}
+          <MdmTable
+            key="audit-log"
+            title="Audit Log"
+            subtitle="Read-only record of all system actions"
+            columns={alCols}
+            fields={[]}
+            emptyDefault={{}}
+            fetchFn={fetchAuditLogs}
+            createFn={async () => {}}
+            updateFn={async () => {}}
+            deleteFn={async () => {}}
             readOnly
           />
         )}
