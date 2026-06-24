@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Ship, Cog, ClipboardList, Wrench, Package,
   AlertTriangle, CheckSquare, BarChart3, Settings, ChevronLeft,
   ChevronRight, Anchor, LogOut, User, ChevronUp, Mail, Shield,
-  Clock, Gauge, ClipboardCheck
+  Clock, Gauge, ClipboardCheck, Database, SlidersHorizontal
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -28,6 +28,10 @@ const allNavItems: NavItem[] = [
   { path: '/spares',     label: 'Spares',     icon: Package,       roles: ['admin', 'chief_engineer', 'technician'] },
   { path: '/defects',    label: 'Defects',    icon: AlertTriangle, roles: ['admin', 'chief_engineer', 'technician'] },
   { path: '/approvals',  label: 'Approvals',  icon: CheckSquare,   roles: ['admin', 'chief_engineer'] },
+  // MDM section (admin only)
+  { path: '/mdm/common',         label: 'Common',            icon: Database,         roles: ['admin'], section: 'MDM' },
+  // Administration section (admin only)
+  { path: '/admin',              label: 'Administration',    icon: SlidersHorizontal, roles: ['admin'], section: 'ADMINISTRATION' },
   { path: '/settings',   label: 'Settings',   icon: Settings,      roles: ['admin'] },
 ];
 
