@@ -32,7 +32,7 @@ interface Props {
   readOnly?: boolean;
 }
 
-const inp = 'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white';
+const inp = 'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white';
 
 function StatusBadge({ val }: { val: unknown }) {
   const active = String(val) === 'Active';
@@ -135,7 +135,7 @@ export function MdmTable({ title, subtitle, columns, fields, emptyDefault, fetch
             </div>
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
               <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-xl bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 disabled:opacity-50 flex items-center gap-2">
+              <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-xl text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2" style={{ background: '#4f46e6' }}>
                 {saving && <Loader size={13} className="animate-spin" />}Save
               </button>
             </div>
@@ -167,7 +167,7 @@ export function MdmTable({ title, subtitle, columns, fields, emptyDefault, fetch
           {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
         </div>
         {!readOnly && (
-          <button onClick={openCreate} className="btn-primary flex items-center gap-1.5 text-sm">
+          <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-sm font-medium transition-all" style={{ background: '#4f46e6' }}>
             <Plus size={14} />Add
           </button>
         )}
@@ -177,7 +177,7 @@ export function MdmTable({ title, subtitle, columns, fields, emptyDefault, fetch
       <div className="relative mb-4">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
-          className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
+          className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
           placeholder="Search…"
           value={search}
           onChange={e => setSearch(e.target.value)}

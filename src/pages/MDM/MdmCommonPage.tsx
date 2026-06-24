@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Building2, Ship, Globe, Grid3X3 } from 'lucide-react';
 import { MdmTable } from '../../components/ui/MdmTable';
 import type { ColDef, FieldDef } from '../../components/ui/MdmTable';
 import {
@@ -24,11 +25,13 @@ type SubItem = {
 };
 type Group = {
   label: string;
+  icon: React.ElementType;
   items: SubItem[];
 };
 const GROUPS: Group[] = [
   {
     label: 'Companies',
+    icon: Building2,
     items: [
       { key: 'company-types',          label: 'Company Types' },
       { key: 'company-type-groups',    label: 'Company Type Groups' },
@@ -42,6 +45,7 @@ const GROUPS: Group[] = [
   },
   {
     label: 'Vessels',
+    icon: Ship,
     items: [
       { key: 'vessel-sub-types',       label: 'Sub Types' },
       { key: 'vessel-types',           label: 'Types' },
@@ -69,6 +73,7 @@ const GROUPS: Group[] = [
   },
   {
     label: 'Geographical Info',
+    icon: Globe,
     items: [
       { key: 'countries',    label: 'Countries' },
       { key: 'regions',      label: 'Regions' },
@@ -81,6 +86,7 @@ const GROUPS: Group[] = [
   },
   {
     label: 'General',
+    icon: Grid3X3,
     items: [
       { key: 'relations',          label: 'Relations' },
       { key: 'civil-status',       label: 'Civil Status' },
@@ -380,42 +386,53 @@ export function MdmCommonPage() {
       {/* Left sub-nav */}
       <aside
         className="flex-shrink-0 overflow-y-auto"
-        style={{ width: 220, background: '#fff', borderRight: '1px solid #e2e8f0' }}
+        style={{ width: 224, background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(20px)', borderRight: '1px solid rgba(255,255,255,0.85)', boxShadow: '1px 0 0 rgba(0,0,0,0.04)' }}
       >
-        {GROUPS.map(group => (
-          <div key={group.label}>
-            <div style={{ padding: '12px 16px 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#94a3b8', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>
-              {group.label}
-            </div>
-            {group.items.map(item => (
-              <button
-                key={item.key}
-                onClick={() => setActiveKey(item.key)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '7px 16px',
-                  fontSize: 12.5,
-                  fontWeight: activeKey === item.key ? 600 : 400,
-                  color: activeKey === item.key ? '#0ea5e9' : '#475569',
-                  background: activeKey === item.key ? '#f0f9ff' : 'transparent',
-                  borderLeft: activeKey === item.key ? '3px solid #0ea5e9' : '3px solid transparent',
-                  cursor: 'pointer',
-                  transition: 'all 0.1s',
-                  border: 'none',
-                  borderLeftWidth: 3,
-                  borderLeftStyle: 'solid',
-                  borderLeftColor: activeKey === item.key ? '#0ea5e9' : 'transparent',
-                }}
-                onMouseEnter={e => { if (activeKey !== item.key) (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'; }}
-                onMouseLeave={e => { if (activeKey !== item.key) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        ))}
+        <div className="px-2 py-3">
+          {GROUPS.map((group, gi) => {
+            const GroupIcon = group.icon;
+            return (
+              <div key={group.label}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: gi === 0 ? '4px 10px 4px' : '16px 10px 4px', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(60,60,67,0.35)' }}>
+                  <GroupIcon size={10} />
+                  {group.label}
+                </div>
+                {group.items.map(item => {
+                  const active = activeKey === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => setActiveKey(item.key)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '9px 14px',
+                        fontSize: 12.5,
+                        fontWeight: active ? 600 : 500,
+                        color: active ? '#4338ca' : 'rgba(60,60,67,0.65)',
+                        background: active ? 'rgba(79,70,230,0.14)' : 'transparent',
+                        boxShadow: active ? 'inset 0 0 0 1px rgba(79,70,230,0.3)' : 'none',
+                        borderRadius: 10,
+                        cursor: 'pointer',
+                        transition: 'all 0.12s',
+                        border: 'none',
+                        marginBottom: 1,
+                      }}
+                      onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(79,70,230,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#1C1C1E'; } }}
+                      onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'rgba(60,60,67,0.65)'; } }}
+                    >
+                      <GroupIcon size={13} style={{ flexShrink: 0, opacity: 0.7 }} />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </aside>
 
       {/* Main panel */}
