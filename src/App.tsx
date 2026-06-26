@@ -1,5 +1,28 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: string | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(e: Error) { return { error: e.message }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', gap: 12, padding: 24, fontFamily: 'sans-serif' }}>
+          <div style={{ fontSize: 32 }}>⚓</div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', margin: 0 }}>Something went wrong</h2>
+          <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>{this.state.error}</p>
+          <button onClick={() => window.location.href = '/maritime-pms/login'} style={{ marginTop: 8, padding: '8px 20px', borderRadius: 10, border: 'none', background: '#4f46e6', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            Return to Login
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { RequireAuth } from './components/auth/RequireAuth';
@@ -27,6 +50,7 @@ import { AdminPage } from './pages/Admin/AdminPage';
 
 function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <AppProvider>
         <BrowserRouter basename="/maritime-pms">
@@ -60,6 +84,7 @@ function App() {
         </BrowserRouter>
       </AppProvider>
     </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
