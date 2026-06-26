@@ -32,13 +32,13 @@ export function RedirectPage() {
       .then(data => {
         const raw = data?.users?.[0] ?? {};
         saveUser({
-          id:          String(raw.id ?? ''),
-          full_name:   raw.full_name ?? raw.name ?? 'User',
-          email:       raw.email ?? '',
-          role:        raw.role?.name ?? '',
-          profile:     raw.profile?.name ?? '',
-          profile_pic: raw.profile_pic ?? '',
           ...raw,
+          id:          String(raw.id ?? ''),
+          full_name:   String(raw.full_name ?? raw.name ?? 'User'),
+          email:       String(raw.email ?? ''),
+          role:        String(raw.role?.name ?? raw.role ?? ''),
+          profile:     String(raw.profile?.name ?? raw.profile ?? ''),
+          profile_pic: String(raw.profile_pic ?? ''),
         });
       })
       .catch(() => {/* non-fatal */})
