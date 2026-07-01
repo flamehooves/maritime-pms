@@ -2,17 +2,24 @@ import React from 'react';
 import { Anchor, Shield, Globe, Wrench } from 'lucide-react';
 
 // ── Zoho OAuth config ─────────────────────────────────────────────────────
-const ZOHO_CLIENT_ID   = '1000.S6PUMKDAQZBBI6IN0OUF9HOGY8UWKV';
-const ZOHO_REDIRECT_URI = 'https://flamehooves.github.io/maritime-pms/redirect';
-const ZOHO_SCOPE       = 'ZohoCRM.modules.ALL,ZohoCRM.settings.ALL,ZohoCRM.users.READ';
-const ZOHO_AUTH_URL    = 'https://accounts.zoho.in/oauth/v2/auth';
+const ZOHO_CLIENT_ID = '1000.S6PUMKDAQZBBI6IN0OUF9HOGY8UWKV';
+const ZOHO_SCOPE     = 'ZohoCRM.modules.ALL,ZohoCRM.settings.ALL,ZohoCRM.users.READ';
+const ZOHO_AUTH_URL  = 'https://accounts.zoho.in/oauth/v2/auth';
+
+function getRedirectUri(): string {
+  const { protocol, hostname, port } = window.location;
+  const base = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+  // On GitHub Pages the app lives under /maritime-pms/, locally at root
+  const path = hostname === 'flamehooves.github.io' ? '/maritime-pms/redirect' : '/maritime-pms/redirect';
+  return `${base}${path}`;
+}
 
 function buildZohoLoginUrl(): string {
   const params = new URLSearchParams({
     response_type: 'token',
     client_id:     ZOHO_CLIENT_ID,
     scope:         ZOHO_SCOPE,
-    redirect_uri:  ZOHO_REDIRECT_URI,
+    redirect_uri:  getRedirectUri(),
     access_type:   'office',
   });
   return `${ZOHO_AUTH_URL}?${params.toString()}`;
