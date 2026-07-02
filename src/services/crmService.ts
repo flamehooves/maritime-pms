@@ -29,6 +29,8 @@ async function apiFetch(path: string, options?: RequestInit) {
     const text = await res.text();
     throw new Error(`CRM API ${res.status}: ${text}`);
   }
+  // Zoho returns 204 No Content when a search yields zero results
+  if (res.status === 204 || res.headers.get('content-length') === '0') return null;
   return res.json();
 }
 
