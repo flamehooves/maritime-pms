@@ -1,0 +1,653 @@
+<!doctype html>
+<title>PalLite Demo Script</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:   #0D1B2A;
+    --ocean:  #1A6B8A;
+    --teal:   #17A2B8;
+    --slate:  #64748B;
+    --fog:    #E8EEF4;
+    --white:  #FAFCFE;
+    --ink:    #1C2B3A;
+    --warn:   #D97706;
+    --r:      8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #F0F4F8;
+    color: var(--ink);
+    line-height: 1.6;
+    font-size: 17px; /* larger for phone reading */
+  }
+
+  /* ── Header ── */
+  .doc-header {
+    background: var(--navy);
+    color: #fff;
+    padding: 28px 20px 22px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .doc-header .eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 6px;
+  }
+  .doc-header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    margin-bottom: 6px;
+  }
+  .doc-header .meta {
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Progress bar ── */
+  .progress-bar {
+    display: flex;
+    background: rgba(255,255,255,0.08);
+    height: 3px;
+    margin-top: 14px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-seg { flex: 1; }
+  .progress-seg:nth-child(1) { background: #3B82F6; }
+  .progress-seg:nth-child(2) { background: #10B981; }
+  .progress-seg:nth-child(3) { background: #8B5CF6; }
+  .progress-seg:nth-child(4) { background: #F59E0B; }
+  .progress-seg:nth-child(5) { background: #06B6D4; }
+  .progress-seg:nth-child(6) { background: #EC4899; }
+
+  /* ── Nav tabs ── */
+  .tab-bar {
+    display: flex;
+    overflow-x: auto;
+    background: var(--navy);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 2px;
+    padding: 0 8px;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.45);
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tab-btn.active {
+    color: var(--teal);
+    border-bottom-color: var(--teal);
+  }
+
+  /* ── Body ── */
+  .doc-body {
+    padding: 16px 16px 80px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* ── Section page ── */
+  .section-page { display: none; }
+  .section-page.active { display: block; }
+
+  /* ── Opening card ── */
+  .opening-card {
+    background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+    border-radius: var(--r);
+    padding: 22px 20px;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+  .opening-card .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 8px;
+  }
+  .opening-card .pitch {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #fff;
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+  .opening-card p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.6;
+  }
+
+  /* ── Section header ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--fog);
+  }
+  .section-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ink);
+    flex: 1;
+    line-height: 1.25;
+  }
+  .section-time {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--slate);
+    background: var(--fog);
+    padding: 3px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  /* ── Beat card ── */
+  .beat {
+    border-radius: var(--r);
+    margin-bottom: 10px;
+    overflow: hidden;
+    border: 1px solid #dde4ec;
+  }
+  .beat-action {
+    padding: 7px 14px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .beat-action.click  { color: #1e40af; background: #DBEAFE; }
+  .beat-action.say    { color: #14532D; background: #DCFCE7; }
+  .beat-action.show   { color: #581C87; background: #F3E8FF; }
+  .beat-action.tip    { color: #92400E; background: #FEF3C7; }
+  .beat-action.pause  { color: var(--slate); background: #F1F5F9; }
+  .beat-body {
+    padding: 13px 15px;
+    font-size: 16px;
+    color: var(--ink);
+    background: #fff;
+    line-height: 1.6;
+  }
+  .beat-body strong { color: var(--navy); font-weight: 700; }
+  .beat-body em { font-style: normal; color: #1e40af; font-weight: 600; }
+
+  /* ── Q&A ── */
+  .qa-item {
+    background: #fff;
+    border-radius: var(--r);
+    border: 1px solid #dde4ec;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .qa-q {
+    padding: 13px 15px 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    border-bottom: 1px solid var(--fog);
+    background: #F8FAFC;
+  }
+  .qa-q::before { content: 'Q  '; color: #1e40af; font-weight: 800; }
+  .qa-a {
+    padding: 12px 15px;
+    font-size: 15px;
+    color: #334155;
+    line-height: 1.6;
+  }
+  .qa-a::before { content: 'A  '; color: #059669; font-weight: 800; }
+
+  /* ── Closing note ── */
+  .closing-note {
+    background: #DCFCE7;
+    border: 1px solid #86EFAC;
+    border-radius: var(--r);
+    padding: 16px 18px;
+    font-size: 15px;
+    color: #14532D;
+    line-height: 1.7;
+    margin-top: 16px;
+  }
+  .closing-note strong { color: #14532D; font-weight: 700; }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    display: flex;
+    background: var(--navy);
+    padding: 10px 16px 14px;
+    gap: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .nav-prev, .nav-next {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .nav-prev { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+  .nav-next { background: var(--teal); color: #fff; }
+  .nav-prev:active { background: rgba(255,255,255,0.18); }
+  .nav-next:active { background: #0e8f8b; }
+  .nav-counter {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    align-self: center;
+    width: 40px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+</style>
+
+<div class="doc-header">
+  <div class="eyebrow">Client Demo — Presentation Script</div>
+  <h1>⚓ PalLite PMS Demo</h1>
+  <div class="meta">
+    <span>⏱ ~25 min total</span>
+    <span>7 sections</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-seg"></div>
+    <div class="progress-seg"></div>
+    <div class="progress-seg"></div>
+    <div class="progress-seg"></div>
+    <div class="progress-seg"></div>
+    <div class="progress-seg"></div>
+  </div>
+</div>
+
+<div class="tab-bar" id="tabBar"></div>
+
+<div class="doc-body">
+
+  <!-- Section 0: Opening -->
+  <div class="section-page active" data-index="0">
+    <div class="opening-card">
+      <div class="label">Your opening line — say this first</div>
+      <div class="pitch">"PalLite is a fleet maintenance platform built specifically for how your operations team actually works — everything from vessel health to job orders to spare parts, all connected to a single live database."</div>
+      <p>Then pause. Let it land. Don't rush into features immediately.</p>
+    </div>
+
+    <div class="section-header">
+      <div class="section-num">0</div>
+      <div class="section-title">Before you begin</div>
+      <div class="section-time">Prep</div>
+    </div>
+
+    <div class="beat">
+      <div class="beat-action tip">Prep</div>
+      <div class="beat-body">Log in to the app once before the demo so your Zoho OAuth token is fresh. Keep the app open in a browser tab.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action tip">Prep</div>
+      <div class="beat-body">Open a Zoho CRM tab in a separate window. If they ask "where does data go?" flip over and show them a live record — it lands very well.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action tip">Tip</div>
+      <div class="beat-body">Three roles exist: <strong>Fleet Administrator</strong> (sees everything), <strong>Chief Engineer</strong> (manages their vessel), <strong>Technician</strong> (executes jobs). Mention this early.</div>
+    </div>
+  </div>
+
+  <!-- Section 1: Intro -->
+  <div class="section-page" data-index="1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">Introduction</div>
+      <div class="section-time">2 min</div>
+    </div>
+
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"What you're going to see today is a <strong>live system</strong>. Every number, every vessel, every job order is pulling in real-time from Zoho CRM. This is not a mockup."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"The system is designed for three roles: <strong>Fleet Administrators</strong> who see everything, <strong>Chief Engineers</strong> who manage their vessel's maintenance, and <strong>Technicians</strong> who handle day-to-day job execution."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Open <em>flamehooves.github.io/maritime-pms</em>. Show the login screen briefly.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"Login is handled through <strong>Zoho's secure OAuth</strong> — no separate passwords, it uses your existing Zoho account."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click <em>Continue with Zoho</em> and complete login.</div>
+    </div>
+  </div>
+
+  <!-- Section 2: Dashboard -->
+  <div class="section-page" data-index="2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">Fleet Dashboard</div>
+      <div class="section-time">4 min</div>
+    </div>
+
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"The first thing after login is the <strong>Fleet Dashboard</strong>. Designed to answer one question: what needs my attention right now?"</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action show">Show</div>
+      <div class="beat-body">Point to the five stat cards: <strong>Total Vessels, At Sea, In Port, In Maintenance, Critical Defects</strong>. "These update in real time from Zoho CRM."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"The <strong>Fleet Map</strong> shows where every vessel is right now — in port, at sea, in maintenance — colour coded. Click any pin to pull up that vessel."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action show">Show</div>
+      <div class="beat-body">Point to the <strong>Fleet Health Score</strong> donut chart. "A single score for the entire fleet based on open defects and pending maintenance. You want this number high."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action show">Show</div>
+      <div class="beat-body">Scroll to the <strong>Maintenance Heatmap</strong> and <strong>Jobs Completed</strong> trend. "These two charts together tell you if your maintenance programme is keeping up or falling behind."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action tip">If asked</div>
+      <div class="beat-body">"What does the score mean?" → <em>"It's a weighted composite of open critical defects, overdue jobs, and vessels in maintenance. We can tune the weighting to match your KPIs."</em></div>
+    </div>
+  </div>
+
+  <!-- Section 3: Vessels & Equipment -->
+  <div class="section-page" data-index="3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">Vessels &amp; Equipment</div>
+      <div class="section-time">5 min</div>
+    </div>
+
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click <em>Vessels</em> in the sidebar.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"Full vessel register. Every vessel has its flag, class, IMO number, operational status, and health score. Filter by status, search by name."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click into one vessel to open the vessel detail page.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action show">Show</div>
+      <div class="beat-body">Point to the stats banner — last position, certificates, active defects. "Everything about this vessel on one screen."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click <em>Equipments</em> in the sidebar.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"The equipment register is the heart of the PMS. Every piece of equipment — engine, pump, navigation system — is tracked with its status, location, and maintenance history."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click into one equipment item. Show the <strong>Job Plan</strong> and <strong>Job Orders</strong> tabs.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"From any equipment record you can see linked maintenance plans, open and completed job orders, spare parts, and defects reported against it. <strong>Everything is connected.</strong>"</div>
+    </div>
+  </div>
+
+  <!-- Section 4: Maintenance -->
+  <div class="section-page" data-index="4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">Maintenance Workflow</div>
+      <div class="section-time">5 min</div>
+    </div>
+
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"Let me walk you through how a piece of maintenance work flows through the system from plan to completion."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click <em>Due Jobs</em> in the sidebar.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"Due Jobs shows everything overdue or coming up for maintenance across the fleet. Colour-coded by urgency — critical overdue items are immediately visible."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click <em>Job Orders</em>.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"When a job needs to be executed, it becomes a Job Order. Assigned to a technician, tracked through <strong>Open → In Progress → Completed</strong>, and requires approval before closing."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click <em>Defects</em>.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"Defects can be reported by any crew member. Categorised by severity, assigned to a vessel and component, tracked until resolved. Nothing falls through the cracks."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click <em>Approvals</em>.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"All job completions require approval. Full audit trail of every decision. The Chief Engineer or Fleet Administrator reviews, can request changes, and signs off."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action tip">If asked</div>
+      <div class="beat-body">"Can we get notifications?" → <em>"Email alerts are configured per event type. A technician gets notified when a job is assigned, the CE gets notified when approval is needed."</em></div>
+    </div>
+  </div>
+
+  <!-- Section 5: MDM & Admin -->
+  <div class="section-page" data-index="5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title">MDM &amp; Administration</div>
+      <div class="section-time">5 min</div>
+    </div>
+
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"Now the admin side — this is what your system administrator controls. Most users never see this area."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click <em>Common</em> under MDM in the sidebar.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"Master Data Management — all reference data lives here. Company types, vessel types, flags, ports, currencies, countries. Every dropdown in the system draws from here. <strong>Your data stays consistent.</strong>"</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action show">Show</div>
+      <div class="beat-body">Click through a couple of sub-items — <em>All Companies</em>, then <em>Flags</em>. Show the Add button and search bar. "Full add, edit, delete, search. All changes sync to Zoho CRM instantly."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action click">Click</div>
+      <div class="beat-body">Click <em>Administration</em> in the sidebar.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"Administration shows all active Zoho CRM users — name, email, role, profile — pulled live from the system. User management happens in Zoho, keeping a single source of truth."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action tip">If asked</div>
+      <div class="beat-body">"Can we add users from here?" → <em>"User creation is handled in Zoho CRM admin to maintain security governance. This view gives your team visibility without giving everyone access to user provisioning."</em></div>
+    </div>
+  </div>
+
+  <!-- Section 6: Q&A + Close -->
+  <div class="section-page" data-index="6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div class="section-title">Q&amp;A + Closing</div>
+      <div class="section-time">4 min</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="qa-q">Where is the data stored?</div>
+      <div class="qa-a">Zoho CRM — your existing Zoho account. No new server, no new database to maintain.</div>
+    </div>
+    <div class="qa-item">
+      <div class="qa-q">Can we use it on mobile?</div>
+      <div class="qa-a">The web app is responsive and works in any browser on any device. A native mobile app is on the roadmap.</div>
+    </div>
+    <div class="qa-item">
+      <div class="qa-q">What if Zoho is down?</div>
+      <div class="qa-a">The app relies on the Zoho CRM API. Zoho maintains 99.9% uptime SLA — the same reliability your CRM runs on today.</div>
+    </div>
+    <div class="qa-item">
+      <div class="qa-q">Can we import our existing data?</div>
+      <div class="qa-a">Yes — data can be bulk-imported into Zoho CRM via CSV, then it immediately appears in PalLite.</div>
+    </div>
+    <div class="qa-item">
+      <div class="qa-q">How many vessels can it handle?</div>
+      <div class="qa-a">There is no hard limit — it scales with Zoho CRM's capacity. Deployments with 50+ vessels are supported.</div>
+    </div>
+    <div class="qa-item">
+      <div class="qa-q">Who controls who sees what?</div>
+      <div class="qa-a">Three built-in roles: Fleet Administrator, Chief Engineer, Technician. Roles are managed in Zoho and control which modules and actions each user can access.</div>
+    </div>
+    <div class="qa-item">
+      <div class="qa-q">What does customisation cost?</div>
+      <div class="qa-a">The MDM section means most reference data — company types, vessel classes, port lists — is fully configurable by your admin without any code changes.</div>
+    </div>
+    <div class="qa-item">
+      <div class="qa-q">Is the code ours?</div>
+      <div class="qa-a">Yes — the source code is in your Git repository and fully owned by you.</div>
+    </div>
+
+    <div class="section-header" style="margin-top:24px">
+      <div class="section-num" style="background:#059669">✓</div>
+      <div class="section-title">Closing line</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"What you've seen today is the <strong>live system</strong>, running against real data. This is not a prototype — it's production-ready. The next step is configuring it with your vessels, your equipment register, and your team."</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action pause">Pause</div>
+      <div class="beat-body">Give them 5 seconds of silence. Let "production-ready" settle before moving to next steps.</div>
+    </div>
+    <div class="beat">
+      <div class="beat-action say">Say</div>
+      <div class="beat-body">"I'd suggest we schedule a short working session with your operations lead — bring your vessel list and we can have your first vessel live in the system within a day."</div>
+    </div>
+
+    <div class="closing-note">
+      <strong>Done!</strong> Great job. If they're engaged, ask: "Which module would be most useful for your team to see in more detail?" — then go back to that section.
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom navigation -->
+<div class="bottom-nav">
+  <button class="nav-prev" id="prevBtn" onclick="navigate(-1)">← Prev</button>
+  <span class="nav-counter" id="counter">1 / 7</span>
+  <button class="nav-next" id="nextBtn" onclick="navigate(1)">Next →</button>
+</div>
+
+<script>
+  const sections = document.querySelectorAll('.section-page');
+  const tabBar = document.getElementById('tabBar');
+  const counter = document.getElementById('counter');
+  const tabs = [
+    { label: '⚓ Prep',     short: 'Prep' },
+    { label: '1 · Intro',  short: 'Intro' },
+    { label: '2 · Dash',   short: 'Dash' },
+    { label: '3 · Vessels',short: 'Vessels' },
+    { label: '4 · Maint',  short: 'Maint' },
+    { label: '5 · MDM',    short: 'MDM' },
+    { label: '6 · Q&A',    short: 'Q&A' },
+  ];
+  let current = 0;
+
+  // Build tabs
+  tabs.forEach((t, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = t.label;
+    btn.onclick = () => goTo(i);
+    tabBar.appendChild(btn);
+  });
+
+  function goTo(idx) {
+    sections[current].classList.remove('active');
+    tabBar.querySelectorAll('.tab-btn')[current].classList.remove('active');
+    current = Math.max(0, Math.min(sections.length - 1, idx));
+    sections[current].classList.add('active');
+    tabBar.querySelectorAll('.tab-btn')[current].classList.add('active');
+    counter.textContent = (current + 1) + ' / ' + sections.length;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    // Scroll tab into view
+    const activeTab = tabBar.querySelectorAll('.tab-btn')[current];
+    activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  function navigate(dir) { goTo(current + dir); }
+
+  // Swipe support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 60) navigate(dx < 0 ? 1 : -1);
+  }, { passive: true });
+</script>
